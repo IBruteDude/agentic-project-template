@@ -240,6 +240,17 @@ async function main() {
     rendered.push(dest.slice(ROOT.length + 1));
   }
 
+  // static team skills (no tokens; verified token-free): verbatim copy
+  // scripts/template/skills/* -> .agents/skills/*
+  const SKILLS_SRC = join(SCRIPTS_TMPL, "skills");
+  for (const src of walk(SKILLS_SRC)) {
+    const rel = src.slice(SKILLS_SRC.length + 1).replace(/\\/g, "/");
+    const dest = join(ROOT, ".agents", "skills", rel);
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, readFileSync(src));
+    rendered.push(join(".agents", "skills", rel).replace(/\\/g, "/"));
+  }
+
   // personalization log
   const log = `# Personalization log\n\nRendered from agentic-project-template by fire-once \`scripts/bootstrap.mts\`.\nReruns are not supported; hand-tune from here. Template sources + wizard self-deleted after success.\n\n- Date: ${new Date().toISOString().slice(0, 10)}\n- Project: ${inp.projectName} (${inp.projectSlug}) — org \`${inp.githubOrg}\`\n- Members: ${inp.members.join(", ")} (team size ${inp.teamSize})\n- Domain: ${inp.domainOneliner}\n- Domain seed terms: ${inp.domainSeedTerms}\n- Learning depth: ${inp.learningDepth} (guided = walkthroughs + intake; intake-only = inbox without walkthroughs)\n- Stack: ${inp.stackDesc}\n  - VERIFY-TODO: confirm package manager / test / typecheck commands for this stack; adapt \`.sandcastle/Dockerfile\` + \`package.json\` scripts.\n- Model: ${inp.modelId} via \`OPENCODE_MODEL\` (default in \`.sandcastle/main.mts\`, override in \`.sandcastle/.env\`)\n- Credential var: \`${inp.credentialVar}\`\n  - VERIFY-TODO: confirm the credential for this model on the host (\`opencode providers login\` or the env var) for headless runs.\n- Rendered ${rendered.length} files:\n${rendered.map((r) => `  - \`${r}\``.trim()).join("\n")}\n\n## Verify\n\n- [ ] \`npx tsx scripts/token-audit.mts\` passes (0 tokens, wording clean).\n- [ ] \`cp .sandcastle/.env.example .sandcastle/.env\`, then fill \`GH_TOKEN\` + model credential (never committed).\n- [ ] First issue map created; \`gh issue list\` works from host and sandbox.\n`;
   writeFileSync(join(ROOT, "PERSONALIZATION.log.md"), log);

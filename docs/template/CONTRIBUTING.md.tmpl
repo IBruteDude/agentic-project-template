@@ -22,8 +22,9 @@ How anyone — team member, future teammate, or agent-assisted contributor — w
    `git config user.email "<same>@users.noreply.github.com"`.
    Agents verify this before every commit proposal and stop on anything else.
 3. Read `AGENTS.md`, `docs/agents/git-workflow.md`, and `CONTEXT.md` (or the map #1 when it points somewhere newer).
- 4. Say `$brief` to an agent and confirm your `STATUS.md` exists under `.scratch/personal/<you>/` (shape/contract in `docs/agents/personal-status.md`).
- 5. If you will run sandcastle locally: need Docker 27+ and Node 22 (`docker --version`, `node --version` — already on this host), then `npm install`, `cp .sandcastle/.env.example .sandcastle/.env` (copy, never move) and fill `GH_TOKEN` and the credential for your `OPENCODE_MODEL` (see `.env.example`). Secrets stay in `.sandcastle/.env` only — repo root `.env` is ignored by the runner.
+ 4. Restore upstream skills: `npx skills@latest experimental_install` from the repo root fetches the pinned `.agents/skills/` set from `skills-lock.json` (the `brief`/`wrap` team skills ship with the repo; the rest is upstream). Later bumps via `npx skills update`. Installed skills are committed, not ignored.
+ 5. Say `$brief` to an agent and confirm your `STATUS.md` exists under `.scratch/personal/<you>/` (shape/contract in `docs/agents/personal-status.md`).
+ 6. If you will run sandcastle locally: need Docker 27+ and Node 22 (`docker --version`, `node --version` — already on this host), then `npm install`, `cp .sandcastle/.env.example .sandcastle/.env` (copy, never move) and fill `GH_TOKEN` and the credential for your `OPENCODE_MODEL` (see `.env.example`). Secrets stay in `.sandcastle/.env` only — repo root `.env` is ignored by the runner.
 <!-- VERIFY-TODO(stack): declared stack is "{{STACK_DESC}}". Confirm package manager / test / typecheck commands for this stack and adapt `.sandcastle/Dockerfile` + `package.json` scripts. Non-Node stacks: keep the lane-safe prompts, replace the runner image/commands, record in PERSONALIZATION.log.md. -->
 
 ## 3. The daily driver — $brief and $wrap

@@ -9,7 +9,7 @@ Single visible manifest: what the template owns (safe to update) vs what the pro
 - `docs/agents/` (`domain.md`, `git-workflow.md`, `issue-tracker.md`, `personal-status.md`, `triage-labels.md`)
 - `.sandcastle/` runner (`Dockerfile`, `main.mts`, `plan-prompt.md`, `implement-prompt.md`, `review-prompt.md`, `.env.example`, `.gitignore`)
 - `package.json` (runner deps; stack declaration renders from STACK_DESC token with VERIFY-TODOs where unknown)
-- `skills-lock.json` + `.agents/skills/` wiring (vendored upstream skills; excluded from wording audit)
+- `skills-lock.json` (pinned upstream-skill manifest; restored via `npx skills@latest experimental_install`, bumps via `npx skills update`) + `.agents/skills/` (upstream set, committed; plus template-owned `brief` + `wrap` team skills; excluded from wording audit)
 - `docs/knowledge/inbox/INDEX.md` (structure; notes themselves are project-owned)
 - `docs/adr/README.md` + `docs/adr/0000-template.md` (seed + blank; numbered decisions are project-owned)
 - `scripts/token-audit.mts` (audit tool: unrendered tokens + wording)

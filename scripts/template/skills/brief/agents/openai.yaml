@@ -1,0 +1,5 @@
+interface:
+  display_name: "Brief"
+  short_description: "Morning brief — what is up for work"
+policy:
+  allow_implicit_invocation: false

@@ -2,6 +2,14 @@
 
 Every template release carries a human-readable entry so a downstream team can judge whether an update matters before pulling with `scripts/sync-template.mts`. Newest first.
 
+## 0.6.0 — 2026-09-20 — Skills provenance: brief/wrap rails + upstream install story
+
+- `brief` + `wrap` are real template-owned rails now: byte-identical copies live at `scripts/template/skills/brief|wrap/`, render verbatim to downstream `.agents/skills/brief|wrap` via bootstrap/adopt, and sync like any template-owned file. The daily driver `CONTRIBUTING.md` promises finally exists in every fresh project.
+- Upstream skills need no hand-rolled installer: setup runs `npx skills@latest experimental_install` (restores `.agents/skills/` from the pinned `skills-lock.json`), later bumps via `npx skills update`. Documented in the README agent flow with a manual fallback in `CONTRIBUTING.md` first-day setup.
+- Installed skills are committed, not ignored — a fresh clone has working `$brief` on arrival; updates flow through the Yes-gated updater.
+- Existing projects (wellfin included — treated as any other downstream) get the installer docs plus brief/wrap records via adopt/sync; already-present identical skill files skip.
+- Fixture proof (scratch, 2026-09-20): fixture bootstrap renders 27 files (23 + 4 skill files), token-audit PASS (0 tokens, wording clean), wizard + template sources self-deleted, `.template-sync.json` present.
+
 ## 0.5.0 — 2026-09-20 — Clean-room setup: purge, scripts layout, agent-driven bootstrap
 
 - History restarted here: earlier entries referenced the template's source project and are gone. New projects seeded from this version carry no source-project history.

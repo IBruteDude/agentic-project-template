@@ -1,0 +1,5 @@
+interface:
+  display_name: "Wrap"
+  short_description: "Record stopping point for broken-off streams"
+policy:
+  allow_implicit_invocation: true
