@@ -22,9 +22,37 @@ The wizard renders every `docs/template/*.tmpl` and `scripts/template/*` token, 
 - Prose templates: `docs/template/` — `AGENTS`, `CONTRIBUTING`, `CONTEXT`, `docs/agents/*`, knowledge inbox `INDEX`, `docs/adr/` seed.
 - Runnable templates: `scripts/template/` — `package.json`, `.sandcastle/*`, `.gitignore`, skills lock, fixtures, audit.
 - `bootstrap.mts` — fire-once wizard (self-deletes). Reruns are not supported; hand-tune after.
-- `sync-template.mts` — pull-style updater (per-file Yes-gate; project-owned never overwritten). Added in #22.
+- `sync-template.mts` — pull-style updater (per-file Yes-gate; project-owned never overwritten).
+- `adopt.mts` — one-time adopter for existing projects (additive; per-file Yes on conflicts; glossary + README always protected; manifest-only merge). Stays in this checkout; downstream keeps the updater plus a machine sync record.
 - `TEMPLATE-OWNERSHIP.md` — single visible manifest: template-owned vs project-owned.
 - `TEMPLATE-CHANGELOG.md` — every release with a human-readable entry; judge before pulling.
+
+## Adopt an existing project
+
+Install the full rails into a lived-in repo in place — no clone-transplant dance. Run from a template checkout against the old repo path (same shape as the updater):
+
+```sh
+git clone https://github.com/IBruteDude/agentic-project-template.git /tmp/template
+npx tsx /tmp/template/adopt.mts --downstream ~/projects/old-project
+# infer-then-confirm: slug + org from the downstream git remote, name from its
+# package manifest (directory-name fallback), members + domain + stack + model
+# prompted with fixture defaults; every inferred value shown for confirmation.
+# Non-interactive fixture shape:
+npx tsx /tmp/template/adopt.mts --template /tmp/template --downstream /tmp/old-proj \
+  --input /tmp/template/scripts/template/fixtures/sample-inputs.json --yes --non-interactive
+```
+
+Collision policy (additive by default; full rails only, no subset picker):
+
+- Missing template-owned files are created.
+- Existing template-owned files that differ are left as-is and reported as `conflict` for an interactive per-file Yes (`overwrite` or `skip`). `--yes` never overwrites them; it only applies the additive writes (creates + manifest merge + sync record).
+- `README.md` and `CONTEXT.md` (glossary) are always protected: created from the template only when absent, otherwise reported untouched with no prompt and kept byte-identical.
+- `package.json` is the sole structural merge: missing scripts and dependencies are added, existing entries are kept, dependency version conflicts resolve semver-higher-wins with a report line.
+- Anything outside the template-owned list (product code, team-created files, local-only paths) is never written.
+
+Records: human `PERSONALIZATION.log.md` (inputs plus created vs conflicted vs merged vs protected, consistent with bootstrap; created when absent, appended when present) plus machine `.template-sync.json` (template source, version, inputs). The updater reads the sync record when `--input` is omitted, so adopted projects pull later releases with the same updater and without re-asking.
+
+Idempotency: reruns are a safe no-op — identical files skip, conflicts re-report, protected stay untouched, the merged manifest skips once applied. Nothing overwrites without an interactive per-file Yes.
 
 ## Tokens
 

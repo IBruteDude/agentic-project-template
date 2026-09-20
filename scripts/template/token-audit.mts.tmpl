@@ -31,7 +31,7 @@ function walk(dir: string): string[] {
 }
 
 const skipDirs = ["node_modules", ".git", ".scratch", "docs/template", "scripts/template"];
-const skipFiles = ["bootstrap.mts", "PERSONALIZATION.log.md", "TEMPLATE-CHANGELOG.md", "sync-template.mts", "scripts/token-audit.mts"];
+const skipFiles = ["bootstrap.mts", "adopt.mts", "PERSONALIZATION.log.md", "TEMPLATE-CHANGELOG.md", "sync-template.mts", "scripts/token-audit.mts", ".template-sync.json"];
 const fails: string[] = [];
 for (const f of walk(ROOT)) {
   const rel = f.slice(ROOT.length + 1).replace(/\\/g, "/");

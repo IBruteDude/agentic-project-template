@@ -158,7 +158,7 @@ function walk(dir: string): string[] {
 
 function audit(root: string): { tokens: string[]; residue: string[]; schooling: string[] } {
   const skipDirs = ["node_modules", ".git", ".scratch", "docs/template", "scripts/template"];
-  const skipFiles = ["bootstrap.mts", "PERSONALIZATION.log.md", "TEMPLATE-CHANGELOG.md", "sync-template.mts", "scripts/token-audit.mts"];
+  const skipFiles = ["bootstrap.mts", "adopt.mts", "PERSONALIZATION.log.md", "TEMPLATE-CHANGELOG.md", "sync-template.mts", "scripts/token-audit.mts"];
   // Runtime prompt placeholders (sandcastle lane-safe prompts) — intentional, not bootstrap tokens.
   const allowedPlaceholders = new Set(["ISSUE_NUMBER", "ISSUE_TITLE", "BRANCH"]);
   const tokenHits: string[] = [];

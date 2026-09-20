@@ -10,6 +10,9 @@
  *   npx tsx sync-template.mts --template <template-repo> --downstream <project> --input <inputs.json> [--yes] [--non-interactive]
  *
  * Inputs JSON is the same shape as bootstrap fixture (members[], domainOneliner, ...).
+ * When --input is omitted, the updater prefers the downstream machine record
+ * `.template-sync.json` written by adopt (its embedded inputs), falling back to
+ * the template fixture. Adopted projects therefore pull without re-asking.
  * Template-owned files render from docs/template/*.tmpl + scripts/template/* with those
  * inputs, then compare to downstream. Root meta (TEMPLATE-OWNERSHIP, TEMPLATE-CHANGELOG,
  * sync-template.mts itself) sync by direct copy. README.md and CONTEXT.md are
@@ -101,7 +104,21 @@ async function main() {
   const downstreamRoot = resolve(String(args.downstream ?? "."));
   const yesAll = Boolean(args.yes);
   const nonInteractive = Boolean(args["non-interactive"]);
-  const inputPath = String(args.input ?? join(templateRoot, "scripts", "template", "fixtures", "sample-inputs.json"));
+  // Adopted projects carry their inputs in the machine sync record so later
+  // releases re-render without re-asking. Explicit --input always wins.
+  let inputPath = typeof args.input === "string" ? String(args.input) : "";
+  let fromSyncRecord = false;
+  if (!inputPath) {
+    const recordPath = join(downstreamRoot, ".template-sync.json");
+    try {
+      const rec = JSON.parse(readFileSync(recordPath, "utf8"));
+      if (rec && rec.inputs) {
+        inputPath = recordPath;
+        fromSyncRecord = true;
+      }
+    } catch {}
+  }
+  if (!inputPath) inputPath = join(templateRoot, "scripts", "template", "fixtures", "sample-inputs.json");
   if (!existsSync(join(templateRoot, "TEMPLATE-OWNERSHIP.md"))) {
     console.error(`Not a template checkout: ${templateRoot} (missing TEMPLATE-OWNERSHIP.md)`);
     process.exit(1);
@@ -110,7 +127,13 @@ async function main() {
     console.error(`Not a bootstrapped project: ${downstreamRoot} (missing PERSONALIZATION.log.md)`);
     process.exit(1);
   }
-  const inp: Inputs = JSON.parse(readFileSync(inputPath, "utf8"));
+  let inp: Inputs;
+  if (fromSyncRecord) {
+    inp = (JSON.parse(readFileSync(inputPath, "utf8")) as { inputs: Inputs }).inputs;
+    console.log(`Using inputs from downstream ${".template-sync.json"} (adopt record).`);
+  } else {
+    inp = JSON.parse(readFileSync(inputPath, "utf8"));
+  }
   if (typeof (inp as unknown as Record<string, unknown>).members === "string") {
     (inp as unknown as { members: string[] }).members =
       (inp as unknown as { members: string }).members.split(",").map((s: string) => s.trim());
