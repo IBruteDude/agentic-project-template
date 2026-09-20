@@ -56,3 +56,5 @@ Commits on `personal/*` are local-only drafts (never pushed, never PR'd): they m
 
 - Keep personal work invisible to the team: no `git push` involving `personal/*`, no PR from it, no issue comment pointing at personal paths. `.scratch/personal/` stays untracked and out of scoped commits.
 - A finding graduates from personal to shared when it changes a shared decision, glossary term, or unblocks a ticket (decision-impact trigger). Then propose the promotion and wait: a clean `NN-<slug>` branch, a focused commit following the rule above, and the PR or issue comment that carries the finding. Copy the finding out; leave the personal original local.
+
+- Rail fix 0.3.0: squash message must use explicit `-t`/`-b` (never the pre-filled default).

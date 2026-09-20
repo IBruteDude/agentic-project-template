@@ -2,6 +2,13 @@
 
 Every template release carries a human-readable entry so a downstream team can judge whether an update matters before pulling with `sync-template`. Newest first.
 
+## 0.3.0 — 2026-09-20 — Updater with per-file Yes-gate + fixture round-trip (Part of wellfin#22)
+
+- `sync-template.mts` at root (stays after bootstrap): pulls a template release into a bootstrapped project file-by-file behind an explicit Yes. Template-owned renders from `docs/template/*.tmpl` + `scripts/template/*` with the same inputs shape; root meta (`TEMPLATE-OWNERSHIP.md`, `TEMPLATE-CHANGELOG.md`, updater itself) syncs by copy. `README.md` + `CONTEXT.md` are project-owned after bootstrap and never touched; `PERSONALIZATION.log.md` is append-only (sync appends an entry).
+- Outcomes: `update` (Yes, overwritten), `create` (missing, written), `skip` (identical), `conflict` (differs but needs explicit Yes — including any `LOCAL-EDIT` marker file even with `--yes`), `protected` (project-owned, never written).
+- Judge before pulling: updater prints `TEMPLATE-CHANGELOG.md` head before any prompt.
+- Fixture round-trip (scratch): bootstrap Acme sample from pre-bump, diverge (`CONTRIBUTING.md` LOCAL-EDIT, `CONTEXT.md` glossary term, new inbox note, updater removed), bump rail-fix line in `git-workflow` template + this entry, sync with `--yes`: `docs/agents/git-workflow.md` updated, `TEMPLATE-CHANGELOG.md` updated, `sync-template.mts` created, `CONTRIBUTING.md` conflict (LOCAL-EDIT preserved), `CONTEXT.md` + inbox note protected (untouched), `AGENTS.md` skip.
+
 ## 0.2.0 — 2026-09-20 — Model auth provider-neutral + fixture bootstrap proof (Part of wellfin#21)
 
 - Wizard + skeleton publish: `bootstrap.mts` renders `docs/template/*.tmpl` + `scripts/template/*` from fixture inputs, writes `PERSONALIZATION.log.md`, runs token + residue + wording audits, then self-deletes plus template sources. Reruns unsupported.
