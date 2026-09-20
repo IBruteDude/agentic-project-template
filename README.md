@@ -4,6 +4,37 @@ A reusable, parameterized full-clone starter for agent-assisted teams: lanes, Ye
 
 This repo is the template source. It is not a project itself.
 
+## Adopt an existing project (agent-driven)
+
+Installing the rails into a lived-in repo is also a conversation, not a bare script run: the adopter infers half your identity and must confirm every guess with you. Paste this to your agent:
+
+> Bring my existing project under the agentic-project-template rails. Clone `https://github.com/IBruteDude/agentic-project-template.git` to `/tmp/template`, infer my slug/org/name from the repo (confirm every inferred value with me), collect the rest (members, domain, stack, model), then run the adopter, restore upstream skills, and walk me through every conflict plus the VERIFY-TODOs.
+
+What the agent does with you:
+
+1. Clones the template and infers slug + org from your git remote, name from your package manifest (directory-name fallback) — every inferred value shown for confirmation.
+2. Runs `npx tsx /tmp/template/scripts/adopt.mts --downstream <your-repo>` (additive: missing rails created, differing files left as `conflict` for a per-file Yes, `README.md` + `CONTEXT.md` always protected, `package.json` merged structurally). Writes the human log plus the machine sync record, same as bootstrap.
+3. Restores upstream skills, copies (never moves) the env template, and fills `GH_TOKEN` + model credential — same as a new project from here on.
+
+Collision policy (additive by default; full rails only, no subset picker):
+
+- Missing template-owned files are created.
+- Existing template-owned files that differ are left as-is and reported as `conflict` for an interactive per-file Yes (`overwrite` or `skip`). `--yes` never overwrites them; it only applies the additive writes (creates + manifest merge + sync record).
+- `README.md` and `CONTEXT.md` (glossary) are always protected: created from the template only when absent, otherwise reported untouched with no prompt and kept byte-identical.
+- `package.json` is the sole structural merge: missing scripts and dependencies are added, existing entries are kept, dependency version conflicts resolve semver-higher-wins with a report line.
+- Anything outside the template-owned list (product code, team-created files, local-only paths) is never written.
+
+Records: human `PERSONALIZATION.log.md` (inputs plus created vs conflicted vs merged vs protected, consistent with bootstrap; created when absent, appended when present) plus machine `.template-sync.json` (template source, version, inputs). Both bootstrap and adopt write it; the updater reads it when `--input` is omitted, so projects pull later releases without re-asking.
+
+Idempotency: reruns are a safe no-op — identical files skip, conflicts re-report, protected stay untouched, the merged manifest skips once applied. Nothing overwrites without an interactive per-file Yes.
+
+Non-interactive fixture shape (CI only, never the human path):
+
+```sh
+npx tsx /tmp/template/scripts/adopt.mts --template /tmp/template --downstream /tmp/old-proj \
+  --input /tmp/template/scripts/template/fixtures/sample-inputs.json --yes --non-interactive
+```
+
 ## Start a new project (agent-driven)
 
 Setup is a conversation with an agent, not a bare script run. The wizard collects your project's identity and offers no placeholder defaults for it — running `scripts/bootstrap.mts` alone will interrogate you field by field, and skipping answers is not an option. Paste this to your agent:
@@ -27,33 +58,6 @@ What the agent does with you:
 - `scripts/adopt.mts` — one-time adopter for existing projects (additive; per-file Yes on conflicts; glossary + README always protected; manifest-only merge). Stays in this checkout; downstream keeps the updater plus a machine sync record.
 - `TEMPLATE-OWNERSHIP.md` — single visible manifest: template-owned vs project-owned.
 - `TEMPLATE-CHANGELOG.md` — every release with a human-readable entry; judge before pulling.
-
-## Adopt an existing project
-
-Install the full rails into a lived-in repo in place — no clone-transplant dance. Run from a template checkout against the old repo path (same shape as the updater):
-
-```sh
-git clone https://github.com/IBruteDude/agentic-project-template.git /tmp/template
-npx tsx /tmp/template/scripts/adopt.mts --downstream ~/projects/old-project
-# infer-then-confirm: slug + org from the downstream git remote, name from its
-# package manifest (directory-name fallback), members + domain + stack + model
-# prompted with fixture defaults; every inferred value shown for confirmation.
-# Non-interactive fixture shape:
-npx tsx /tmp/template/scripts/adopt.mts --template /tmp/template --downstream /tmp/old-proj \
-  --input /tmp/template/scripts/template/fixtures/sample-inputs.json --yes --non-interactive
-```
-
-Collision policy (additive by default; full rails only, no subset picker):
-
-- Missing template-owned files are created.
-- Existing template-owned files that differ are left as-is and reported as `conflict` for an interactive per-file Yes (`overwrite` or `skip`). `--yes` never overwrites them; it only applies the additive writes (creates + manifest merge + sync record).
-- `README.md` and `CONTEXT.md` (glossary) are always protected: created from the template only when absent, otherwise reported untouched with no prompt and kept byte-identical.
-- `package.json` is the sole structural merge: missing scripts and dependencies are added, existing entries are kept, dependency version conflicts resolve semver-higher-wins with a report line.
-- Anything outside the template-owned list (product code, team-created files, local-only paths) is never written.
-
-Records: human `PERSONALIZATION.log.md` (inputs plus created vs conflicted vs merged vs protected, consistent with bootstrap; created when absent, appended when present) plus machine `.template-sync.json` (template source, version, inputs). Both bootstrap and adopt write it; the updater reads it when `--input` is omitted, so projects pull later releases without re-asking.
-
-Idempotency: reruns are a safe no-op — identical files skip, conflicts re-report, protected stay untouched, the merged manifest skips once applied. Nothing overwrites without an interactive per-file Yes.
 
 ## Tokens
 
