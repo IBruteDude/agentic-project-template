@@ -204,8 +204,9 @@ async function collect(
   const manifestName = inferManifestName(downstreamRoot);
   const dirBase = basename(resolve(downstreamRoot));
 
+  const dirSlug = dirBase.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || dirBase;
   const inferred: Record<string, string> = {
-    projectSlug: String(cliInput.projectSlug ?? remote?.slug ?? dirBase.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ?? dirBase),
+    projectSlug: String(cliInput.projectSlug ?? remote?.slug ?? dirSlug),
     githubOrg: String(cliInput.githubOrg ?? remote?.org ?? fixture.githubOrg ?? "acme-org"),
     projectName: String(cliInput.projectName ?? (manifestName ? toTitleCase(manifestName) : toTitleCase(dirBase))),
   };
