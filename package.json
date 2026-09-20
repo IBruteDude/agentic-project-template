@@ -1,0 +1,15 @@
+{
+  "name": "agentic-project-template",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@10.9.2",
+  "scripts": {
+    "bootstrap": "tsx bootstrap.mts --non-interactive",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "@types/node": "^22.0.0"
+  }
+}

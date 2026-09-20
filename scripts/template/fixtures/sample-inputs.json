@@ -1,0 +1,13 @@
+{
+  "projectName": "Acme Ledger",
+  "projectSlug": "acme-ledger",
+  "githubOrg": "acme-org",
+  "members": ["ada", "bilal", "camelia"],
+  "domainOneliner": "Small-business cash tracking. V1 is manual entry, single-currency, English records, append-only with derived balances.",
+  "domainSeedTerms": "entry, balance, correction",
+  "teamSize": "3",
+  "learningDepth": "guided",
+  "stackDesc": "Node 22 + TypeScript + Docker",
+  "modelId": "opencode/muse-spark-1.3-contributor-free",
+  "credentialVar": "OPENCODE_API_KEY"
+}

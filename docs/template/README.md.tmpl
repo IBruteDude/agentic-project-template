@@ -1,0 +1,18 @@
+# {{PROJECT_NAME}}
+
+{{DOMAIN_ONELINER}}
+
+Stack: {{STACK_DESC}} · Learning: {{LEARNING_DEPTH}} · Org: `{{GITHUB_ORG}}`
+
+## Start here
+
+- Read `AGENTS.md`, `docs/agents/git-workflow.md`, `CONTEXT.md`.
+- See `CONTRIBUTING.md` for setup (copy `.sandcastle/.env.example` → `.sandcastle/.env`, fill `GH_TOKEN` + model credential; never commit `.env`).
+- Personalization record: `PERSONALIZATION.log.md` (bootstrap inputs + VERIFY-TODOs). Reruns unsupported; hand-tune from the log.
+- Template updates: `TEMPLATE-CHANGELOG.md` (judge) + `sync-template.mts` (per-file Yes-gate; project-owned never overwritten — see `TEMPLATE-OWNERSHIP.md`).
+
+## Verify
+
+```sh
+npx tsx scripts/token-audit.mts
+```

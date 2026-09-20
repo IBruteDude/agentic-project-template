@@ -1,0 +1,61 @@
+#!/usr/bin/env tsx
+/**
+ * scripts/token-audit.mts — rendered-project audit (stays after bootstrap).
+ *
+ * Checks zero unrendered bootstrap tokens, zero source-project residue,
+ * and clean wording outside vendored upstream skills.
+ * Exit 0 on pass, 1 on fail with file:reason lines.
+ *
+ * Prompt placeholders {{ISSUE_NUMBER}} {{ISSUE_TITLE}} {{BRANCH}} are intentional.
+ */
+import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { join, resolve, dirname } from "node:path";
+
+const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
+const RESIDUE = [
+  "wellfin", "wellfiners", "AdelTamer35", "mohamedelawakey", "IBruteDude",
+  "fintech", "EGP", "Egypt", "Egyptian", "graduate trio", "opencode/big-pickle",
+];
+const SCHOOLING = ["academy", "school", "mission", "lesson"];
+const ALLOWED = new Set(["ISSUE_NUMBER", "ISSUE_TITLE", "BRANCH"]);
+
+function walk(dir: string): string[] {
+  const out: string[] = [];
+  if (!existsSync(dir)) return out;
+  for (const e of readdirSync(dir)) {
+    const p = join(dir, e);
+    if (statSync(p).isDirectory()) out.push(...walk(p));
+    else out.push(p);
+  }
+  return out;
+}
+
+const skipDirs = ["node_modules", ".git", ".scratch", "docs/template", "scripts/template"];
+const skipFiles = ["bootstrap.mts", "PERSONALIZATION.log.md", "TEMPLATE-CHANGELOG.md", "sync-template.mts", "scripts/token-audit.mts"];
+const fails: string[] = [];
+for (const f of walk(ROOT)) {
+  const rel = f.slice(ROOT.length + 1).replace(/\\/g, "/");
+  if (skipDirs.some((d) => rel === d || rel.startsWith(d + "/"))) continue;
+  if (skipFiles.some((s) => rel === s || rel.endsWith("/" + s))) continue;
+  if (rel.startsWith(".agents/skills/")) continue;
+  if (!/\.(md|mts|json|ts|js|sh)$/.test(f) && !/Dockerfile|\.gitignore|\.env\.example$/.test(f)) continue;
+  let t: string;
+  try { t = readFileSync(f, "utf8"); } catch { continue; }
+  const toks = (t.match(/\{\{[A-Z][A-Z0-9_]+\}\}/g) ?? []).filter((m) => !ALLOWED.has(m.slice(2, -2)));
+  if (toks.length) fails.push(`${rel}: unrendered tokens ${[...new Set(toks)].join(", ")}`);
+  const low = t.toLowerCase();
+  for (const r of RESIDUE) {
+    if (low.includes(r.toLowerCase())) { fails.push(`${rel}: residue '${r}'`); break; }
+  }
+  if (/\.md$/.test(f)) {
+    for (const w of SCHOOLING) {
+      if (new RegExp(`\\b${w}s?\\b`, "i").test(t)) { fails.push(`${rel}: schooling '${w}'`); break; }
+    }
+  }
+}
+if (fails.length) {
+  console.error(`token-audit FAILED (${fails.length}):`);
+  for (const h of fails) console.error("  " + h);
+  process.exit(1);
+}
+console.log("token-audit PASS: 0 tokens, 0 residue, wording clean.");

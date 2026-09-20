@@ -1,0 +1,21 @@
+# Copy to .sandcastle/.env and fill. Never commit .env.
+# Sandcastle resolves secrets from .sandcastle/.env only (ignores repo root .env).
+
+# GitHub — required for `gh issue view` inside sandbox
+GH_TOKEN=
+
+# Agent model — required. Known-good default: opencode/muse-spark-1.3-contributor-free
+OPENCODE_MODEL={{MODEL_ID}}
+
+# Credential for your OPENCODE_MODEL — required (one of below; see VERIFY-TODO).
+# Default slot rendered by bootstrap:
+{{CREDENTIAL_VAR}}=
+# VERIFY-TODO(model-auth): outside this harness, Muse Spark via opencode uses
+# OpenCode Zen — run `opencode providers login` on the host or set OPENCODE_API_KEY
+# for headless. Recorded in TEMPLATE-CHANGELOG 0.2.0. Confirm on this host.
+
+# Documented examples for other models (leave commented unless you use them):
+# For opencode / Claude Code OAuth (run `claude setup-token` on host if using Claude)
+#CLAUDE_CODE_OAUTH_TOKEN=
+# Or Anthropic API key alternative
+#ANTHROPIC_API_KEY=

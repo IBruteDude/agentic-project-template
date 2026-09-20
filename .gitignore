@@ -1,0 +1,5 @@
+# template repo itself (not rendered projects)
+node_modules/
+.scratch/
+.env
+*.log

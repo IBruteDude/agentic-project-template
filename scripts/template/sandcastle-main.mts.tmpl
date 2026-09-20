@@ -1,0 +1,116 @@
+import { run, opencode } from "@ai-hero/sandcastle";
+import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
+
+// {{PROJECT_NAME}} Sandcastle entry — lane-safe adapter
+// - Planner filters existing `ready-for-agent` (no new labels until approved)
+// - Branches are `NN-<slug>` (not `sandcastle/issue-N`)
+// - No autonomous merge/close/push; human merges via PR
+// - Verification is stack-agnostic (prompt detects harness)
+// - Stack: {{STACK_DESC}}
+// <!-- VERIFY-TODO(stack): confirm runner image/commands for this stack. -->
+//
+// Model: default {{MODEL_ID}}, override via OPENCODE_MODEL in `.sandcastle/.env`.
+const DEFAULT_MODEL = "{{MODEL_ID}}";
+const MODEL = process.env.OPENCODE_MODEL ?? DEFAULT_MODEL;
+const MAX_ITERATIONS = 10;
+const MAX_PARALLEL = 4;
+
+async function main() {
+  // Phase 1: planner — picks unblocked ready-for-agent issues, emits <plan> JSON
+  // Uses plan-prompt.md which respects native blocked_by + Blocked by: lines
+  const planResult = await run({
+    agent: opencode(MODEL),
+    sandbox: docker(),
+    promptFile: ".sandcastle/plan-prompt.md",
+    maxIterations: 1,
+  });
+
+  // Extract <plan> JSON — if empty, nothing to do
+  const planMatch = planResult.output?.match(/<plan>([\s\S]*?)<\/plan>/);
+  if (!planMatch) {
+    console.log("No plan found — no unblocked ready-for-agent issues or planner didn't emit <plan>.");
+    return;
+  }
+  const plan = JSON.parse(planMatch[1]);
+  const issues: Array<{ number: number; title: string; branch: string }> = plan.issues ?? [];
+  if (issues.length === 0) {
+    console.log("Planner returned empty issue list.");
+    return;
+  }
+
+  console.log(`Planned ${issues.length} issue(s):`, issues.map((i) => `${i.number}:${i.branch}`).join(", "));
+
+  // Phase 2: implement (+ advisory review) — parallel, capped
+  // Simple-loop pilot: set MAX_PARALLEL=1 to run one ticket at a time.
+  // Full fan-out: MAX_PARALLEL=4 with review comments (no RALPH, no auto-merge).
+  const semaphore = { active: 0, queue: [] as (() => void)[] };
+  async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+    while (semaphore.active >= MAX_PARALLEL) {
+      await new Promise<void>((res) => semaphore.queue.push(res));
+    }
+    semaphore.active++;
+    try {
+      return await fn();
+    } finally {
+      semaphore.active--;
+      semaphore.queue.shift()?.();
+    }
+  }
+
+  const results = await Promise.allSettled(
+    issues.map((issue) =>
+      withSlot(async () => {
+        console.log(`\n=== Implement ${issue.number} on ${issue.branch} ===`);
+        // Branch strategy: caller supplies NN-<slug>, sandbox reuses worktree per ADR-0003-style reuse
+        const { createSandbox } = await import("@ai-hero/sandcastle");
+        const sandbox = await createSandbox({
+          branch: issue.branch,
+          // Keep heavy dirs out of the worktree diff; npm install runs inside sandbox if needed
+          copyToWorktree: ["node_modules"],
+        });
+
+        const impl = await sandbox.run({
+          agent: opencode(MODEL),
+          promptFile: ".sandcastle/implement-prompt.md",
+          promptArgs: {
+            ISSUE_NUMBER: String(issue.number),
+            ISSUE_TITLE: issue.title,
+            BRANCH: issue.branch,
+          },
+        });
+
+        if ((impl.commits?.length ?? 0) === 0) {
+          console.log(`No commits on ${issue.branch} — skipping review.`);
+          await sandbox.close();
+          return { issue, impl, review: null };
+        }
+
+        console.log(`Review ${issue.number} on ${issue.branch} (advisory, no RALPH)`);
+        const review = await sandbox.run({
+          agent: opencode(MODEL),
+          promptFile: ".sandcastle/review-prompt.md",
+          promptArgs: {
+            ISSUE_NUMBER: String(issue.number),
+            ISSUE_TITLE: issue.title,
+            BRANCH: issue.branch,
+          },
+        });
+
+        await sandbox.close();
+        return { issue, impl, review };
+      })
+    )
+  );
+
+  for (const r of results) {
+    if (r.status === "rejected") console.error("Runner error:", r.reason);
+    else console.log("Done:", r.value.issue.branch, "commits:", r.value.impl.commits?.length ?? 0);
+  }
+
+  console.log("\nAll sandboxes finished. Human merges each NN-<slug> branch via PR (no auto-merge).");
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

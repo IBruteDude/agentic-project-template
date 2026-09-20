@@ -1,0 +1,18 @@
+{
+  "name": "{{PROJECT_SLUG}}",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@10.9.2",
+  "scripts": {
+    "sandcastle": "tsx .sandcastle/main.mts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-hero/sandcastle": "^0.12.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "@types/node": "^22.0.0"
+  }
+}

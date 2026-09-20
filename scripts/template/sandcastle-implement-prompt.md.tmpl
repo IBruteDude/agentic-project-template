@@ -1,0 +1,42 @@
+# TASK
+
+Fix issue #{{ISSUE_NUMBER}}: {{ISSUE_TITLE}}
+
+Pull the issue with `gh issue view {{ISSUE_NUMBER}} --comments` (include labels). If body has `Part of #<map>`, pull that too.
+
+Only work on this issue. Work on branch {{BRANCH}} (caller supplies `NN-<slug>` — never invent another).
+
+# GROUNDING — read first
+
+- `AGENTS.md`, `docs/agents/git-workflow.md`, `docs/agents/issue-tracker.md`, `docs/agents/domain.md`
+- `CONTEXT.md` + relevant `docs/adr/` (use glossary verbatim; on conflict leave a comment, don't guess)
+- `CONTRIBUTING.md` §9 checklist (inbox ≤10, append-only, V1 scope, adopt-over-build)
+
+# EXPLORATION
+
+Explore the repo and load what the ticket needs. Prefer test files touching the area. Don't broaden scope.
+
+# EXECUTION
+
+Use RGR when applicable: RED one test → GREEN minimal → REPEAT → REFACTOR. One ticket per commit. Stage only ticket scope (`git status --short`).
+
+# FEEDBACK LOOPS
+
+Run verification that exists for the touched tree (detect, don't assume):
+`package.json` → `npm run typecheck` / `npm run test` | `services/api` → `pytest` | `apps/android` → `./gradlew check` | none → note "no harness" in issue comment.
+
+# COMMIT (lane-safe)
+
+- `type(scope): imperative lowercase subject`, body what/why, footer `Part of #{{ISSUE_NUMBER}}`. Never `RALPH:`.
+- Stage only ticket scope. Verify `git config user.name` is a team human; include `Author:` in summary. Never invent `Co-authored-by`.
+- Never push, never close the issue, never add/remove labels, never commit secrets / `personal/*` / unrelated scopes. Human merges via PR.
+
+# THE ISSUE
+
+If incomplete, comment on the issue: done / remaining / blockers / files changed. Do not close — human closes on merge.
+
+Once complete, output <promise>COMPLETE</promise> plus a summary: branch, commits, files changed, verification run, open questions.
+
+# FINAL RULES
+
+ONLY WORK ON A SINGLE TASK. English records only.

@@ -1,0 +1,58 @@
+# Git workflow: branches, commits, pushes
+
+Three lanes govern every agent git action: **primary** (shared, protected), **scoped** (one issue, shareable), **personal** (one dev, local-only). Work in exactly one lane at a time.
+
+## The three lanes
+
+- **Primary**: `main` only. `master` is legacy and deleted. Land work here through a PR from a scoped branch. A direct commit on `main` needs a separate explicit human confirmation of the diff plus the message, and is the exception, not the flow.
+- **Scoped**: one GitHub issue, one short-lived branch, deleted after merge. Scope comes from the issue number, ownership from the issue assignee. Everything meant to be shared lives here.
+- **Personal**: `personal/<user>/<topic>` branches plus files under `.scratch/personal/<user>/`. Local-only, never pushed, never opened as a PR. Learning, exploration, and experiments live here. This is the sole exception to the issue-number rule.
+
+## Branch naming
+
+- Create a scoped branch only with explicit human intent (ticket claimed or assigned first, or the human named the issue). Format is strict: `NN-<kebab-slug>`, where `NN` is the GitHub issue number, e.g. `07-define-inference-points`. Lowercase kebab-case after the dash, no bare names (`fix`, `stuff`, `test`).
+- Create a personal branch freely without an issue: `personal/<user>/<topic>`, e.g. `personal/layla/interest-math-notes`. It stays local by construction.
+- Check `git branch` and the issue assignee before creating anything; a branch whose number has no issue, or whose issue belongs to someone else's ticket, is a naming bug: stop and ask.
+
+## Issue labels (closed set)
+
+- Use only documented labels: `wayfinder:map`, `wayfinder:research`, `wayfinder:prototype`, `wayfinder:grilling`, `wayfinder:task`, `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`.
+- Propose a new label in the issue body and wait for approval before applying anything ad-hoc. Scope and ownership live in the issue title, body (`Part of #<map>`, `Blocked by: #<n>`), and assignee, not in invented label strings.
+
+## Commits: show, then wait
+
+For every commit, on any lane except `personal/*`:
+
+1. Stage only the ticket's scope: `git status --short`, plus the full diff of exactly what will be committed.
+2. Present the diff stat, the diff itself (or its path when large), and the proposed message, then wait for an explicit Yes or an edited message.
+
+Commits on `personal/*` are local-only drafts (never pushed, never PR'd): they may be created without waiting for an explicit Yes. Author must still be a team human (`git config user.name` check still applies), hygiene still applies, and promotion to `NN-<slug>` or `main` still requires the Yes gate above.
+3. Message shape: conventional commits — `type(scope): imperative lowercase subject` on line one (e.g. `docs(agents): reserve import_id fields on entries`), body explaining what and why, footer naming `Part of #NN` with the ticket link. One ticket per commit. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. Scope is the area touched (`agents`, `api`, `android`, `domain`, …).
+4. Commit only on the intended branch. On `main` this needs the separate primary confirmation from above; on a scoped branch the earlier branch intent plus this commit confirmation together authorize it.
+5. Commit hygiene: skip nothing via `--no-verify`, amend only your own unpushed commit, stage no secrets (`.env`, tokens), no `personal/*`, no unrelated scopes in one commit.
+
+## Commit identity: humans author, agents assist
+
+- These rules bind every AI actor in the loop — agent harness and underlying model alike. Every commit is authored by one of the team humans: `{{MEMBER_LIST}}`. No AI actor commits under a bare agent or model identity (e.g. `{{PROJECT_SLUG}}-agent`).
+- Before proposing any commit, read `git config user.name` and `git config user.email` and verify the name is one of the team members. Show the resolved `Author: Name <email>` line as part of the commit proposal. When the config holds a bare agent identity or an unknown name, stop and ask who is authoring instead of committing.
+- Author email is the GitHub noreply form `USERNAME@users.noreply.github.com`, so commits link to the right profile without exposing real emails. Each machine owns its human's config; the agent reads and verifies it, never silently overwrites it.
+- When an AI actor wrote the committed content wholesale and the author approved it without modification, append a free-form footer below the body: `Assisted-by: OpenCode (Muse Spark)`. A real `Co-authored-by:` trailer is reserved for when the team owns a bot account with a linked email; never invent a GitHub identity or placeholder email to force the co-author rendering.
+
+## Pushes
+
+- Commit approval on a pre-authorized scoped branch carries push approval for that branch: push it upstream without a second prompt so review can happen.
+- Push nothing else on that approval: `personal/*` is never pushed under any approval, and `main` is never direct-pushed (open a PR from the scoped branch instead).
+
+## Landing PRs
+
+- Land every PR with a squash merge: one commit per PR on `main`. Never run a bare squash.
+- Merge with an explicit message, never the pre-filled default (PR titles stay free-form and are never the commit message):
+  `gh pr merge --squash --delete-branch -t "<conventional subject> (#N)" -b "<what/why plus footer>"`.
+- Squash message shape: conventional-commit subject + ` (#N)` suffix, body for what/why, footer `Part of #NN` (or `Closes #NN` when the PR finishes its issue). One ticket per squash. The merger composes it at landing time.
+- Stacked PRs land bottom-up: retarget each child's base to `main` *before* merging anything, then squash the base, then transplant the child with `git rebase --onto <new-main> <old-base> <child-branch>` (replaying only its own commits, dropping the now-duplicated base commits), push with `--force-with-lease`, and squash it. Retargeting first means deleting the base branch closes nothing — the child's diff just looks inflated until the transplant.
+- Delete the scoped branch after merge.
+
+## Personal stays local; findings get promoted
+
+- Keep personal work invisible to the team: no `git push` involving `personal/*`, no PR from it, no issue comment pointing at personal paths. `.scratch/personal/` stays untracked and out of scoped commits.
+- A finding graduates from personal to shared when it changes a shared decision, glossary term, or unblocks a ticket (decision-impact trigger). Then propose the promotion and wait: a clean `NN-<slug>` branch, a focused commit following the rule above, and the PR or issue comment that carries the finding. Copy the finding out; leave the personal original local.

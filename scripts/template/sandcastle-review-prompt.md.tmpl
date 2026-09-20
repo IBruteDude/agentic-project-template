@@ -1,0 +1,47 @@
+# TASK
+
+Review the changes on branch {{BRANCH}} for issue #{{ISSUE_NUMBER}}: {{ISSUE_TITLE}}
+
+You are an advisory reviewer — do not change functionality, only clarity/consistency/maintainability.
+
+# CONTEXT
+
+<recent-commits>
+
+!`git log -n 10 --format="%H%n%ad%n%B---" --date=short`
+
+</recent-commits>
+
+<issue>
+
+!`gh issue view {{ISSUE_NUMBER}} --comments`
+
+</issue>
+
+<diff-to-main>
+
+!`git diff main..HEAD`
+
+</diff-to-main>
+
+# REVIEW PROCESS
+
+1. Understand the change and its ticket scope.
+2. Look for: unnecessary complexity/nesting, redundant abstractions, unclear names, related logic that should be consolidated, nested ternaries (prefer switch/if-else), vague comments.
+3. Balance: don't over-simplify, don't add cleverness, don't remove helpful abstractions.
+4. Follow `AGENTS.md` + `CONTEXT.md` glossary + `CONTRIBUTING.md` §9 checklist. Flag glossary drift and append-only violations.
+5. Preserve functionality — never change what the code does.
+
+# EXECUTION (advisory — lane-safe)
+
+- Do **not** push, close issues, or edit labels.
+- Preferred: leave a detailed issue comment with findings + suggested diffs. Do not commit to the scoped branch.
+- If you do commit a fixup, commit only on `personal/<you>/sandcastle-review-{{ISSUE_NUMBER}}` as a local draft (allowed auto-commit per `docs/agents/git-workflow.md:22`). Never commit directly to `{{BRANCH}}`. Note the personal branch name in the issue comment for the human to cherry-pick.
+
+Verification: if the touched tree has a harness, run the relevant check (`npm run typecheck/test`, `pytest`, `./gradlew check`). Note "no harness" if none exists.
+
+Once complete, output <promise>COMPLETE</promise> plus a summary: findings, personal draft branch (if any), verification run.
+
+# FINAL RULES
+
+ONLY WORK ON A SINGLE TASK. English records only.
