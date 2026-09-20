@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "npm@10.9.2",
   "scripts": {
-    "bootstrap": "tsx bootstrap.mts --non-interactive",
+    "bootstrap": "tsx scripts/bootstrap.mts --non-interactive",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

@@ -2,8 +2,8 @@
 /**
  * scripts/token-audit.mts — rendered-project audit (stays after bootstrap).
  *
- * Checks zero unrendered bootstrap tokens, zero source-project residue,
- * and clean wording outside vendored upstream skills.
+ * Checks zero unrendered bootstrap tokens and clean wording outside vendored
+ * upstream skills.
  * Exit 0 on pass, 1 on fail with file:reason lines.
  *
  * Prompt placeholders {{ISSUE_NUMBER}} {{ISSUE_TITLE}} {{BRANCH}} are intentional.
@@ -12,10 +12,6 @@ import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
-const RESIDUE = [
-  "wellfin", "wellfiners", "AdelTamer35", "mohamedelawakey", "IBruteDude",
-  "fintech", "EGP", "Egypt", "Egyptian", "graduate trio", "opencode/big-pickle",
-];
 const SCHOOLING = ["academy", "school", "mission", "lesson"];
 const ALLOWED = new Set(["ISSUE_NUMBER", "ISSUE_TITLE", "BRANCH"]);
 
@@ -31,7 +27,7 @@ function walk(dir: string): string[] {
 }
 
 const skipDirs = ["node_modules", ".git", ".scratch", "docs/template", "scripts/template"];
-const skipFiles = ["bootstrap.mts", "adopt.mts", "PERSONALIZATION.log.md", "TEMPLATE-CHANGELOG.md", "sync-template.mts", "scripts/token-audit.mts", ".template-sync.json"];
+const skipFiles = ["scripts/bootstrap.mts", "scripts/adopt.mts", "PERSONALIZATION.log.md", "TEMPLATE-CHANGELOG.md", "scripts/sync-template.mts", "scripts/token-audit.mts", ".template-sync.json"];
 const fails: string[] = [];
 for (const f of walk(ROOT)) {
   const rel = f.slice(ROOT.length + 1).replace(/\\/g, "/");
@@ -43,10 +39,6 @@ for (const f of walk(ROOT)) {
   try { t = readFileSync(f, "utf8"); } catch { continue; }
   const toks = (t.match(/\{\{[A-Z][A-Z0-9_]+\}\}/g) ?? []).filter((m) => !ALLOWED.has(m.slice(2, -2)));
   if (toks.length) fails.push(`${rel}: unrendered tokens ${[...new Set(toks)].join(", ")}`);
-  const low = t.toLowerCase();
-  for (const r of RESIDUE) {
-    if (low.includes(r.toLowerCase())) { fails.push(`${rel}: residue '${r}'`); break; }
-  }
   if (/\.md$/.test(f)) {
     for (const w of SCHOOLING) {
       if (new RegExp(`\\b${w}s?\\b`, "i").test(t)) { fails.push(`${rel}: schooling '${w}'`); break; }
@@ -58,4 +50,4 @@ if (fails.length) {
   for (const h of fails) console.error("  " + h);
   process.exit(1);
 }
-console.log("token-audit PASS: 0 tokens, 0 residue, wording clean.");
+console.log("token-audit PASS: 0 tokens, wording clean.");

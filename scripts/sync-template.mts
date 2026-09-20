@@ -1,18 +1,18 @@
 #!/usr/bin/env tsx
 /**
- * sync-template.mts — pull-style template updater with per-file Yes-gate.
+ * scripts/sync-template.mts — pull-style template updater with per-file Yes-gate.
  *
  * Pulls a template release into an already-bootstrapped downstream project
  * file-by-file behind an explicit Yes. Project-owned specialization is never
  * overwritten; conflicts surface for explicit Yes instead.
  *
  * Usage (run from template checkout or downstream; paths explicit):
- *   npx tsx sync-template.mts --template <template-repo> --downstream <project> --input <inputs.json> [--yes] [--non-interactive]
+ *   npx tsx scripts/sync-template.mts --template <template-repo> --downstream <project> --input <inputs.json> [--yes] [--non-interactive]
  *
- * Inputs JSON is the same shape as bootstrap fixture (members[], domainOneliner, ...).
- * When --input is omitted, the updater prefers the downstream machine record
- * `.template-sync.json` written by adopt (its embedded inputs), falling back to
- * the template fixture. Adopted projects therefore pull without re-asking.
+ * Inputs JSON is the same shape as the bootstrap fixture (members[], domainOneliner, ...).
+ * When --input is omitted, the updater reads the downstream machine record
+ * `.template-sync.json` (written by bootstrap or adopt), holding the original
+ * template source, version, and inputs — so later releases pull without re-asking.
  * Template-owned files render from docs/template/*.tmpl + scripts/template/* with those
  * inputs, then compare to downstream. Root meta (TEMPLATE-OWNERSHIP, TEMPLATE-CHANGELOG,
  * sync-template.mts itself) sync by direct copy. README.md and CONTEXT.md are
@@ -61,7 +61,7 @@ const TMPL_MAP: Record<string, string> = {
 };
 
 // Root meta synced by direct copy (no tokens).
-const META = ["TEMPLATE-OWNERSHIP.md", "TEMPLATE-CHANGELOG.md", "sync-template.mts"];
+const META = ["TEMPLATE-OWNERSHIP.md", "TEMPLATE-CHANGELOG.md", "scripts/sync-template.mts"];
 
 function parseArgs(): Record<string, string | boolean> {
   const a = process.argv.slice(2);
@@ -104,8 +104,9 @@ async function main() {
   const downstreamRoot = resolve(String(args.downstream ?? "."));
   const yesAll = Boolean(args.yes);
   const nonInteractive = Boolean(args["non-interactive"]);
-  // Adopted projects carry their inputs in the machine sync record so later
-  // releases re-render without re-asking. Explicit --input always wins.
+  // Bootstrapped and adopted projects carry their inputs in the machine sync
+  // record, so later releases re-render without re-asking. Explicit --input
+  // always wins.
   let inputPath = typeof args.input === "string" ? String(args.input) : "";
   let fromSyncRecord = false;
   if (!inputPath) {
@@ -130,7 +131,7 @@ async function main() {
   let inp: Inputs;
   if (fromSyncRecord) {
     inp = (JSON.parse(readFileSync(inputPath, "utf8")) as { inputs: Inputs }).inputs;
-    console.log(`Using inputs from downstream ${".template-sync.json"} (adopt record).`);
+    console.log(`Using inputs from downstream ${".template-sync.json"} (bootstrap/adopt record).`);
   } else {
     inp = JSON.parse(readFileSync(inputPath, "utf8"));
   }
@@ -180,7 +181,7 @@ async function main() {
     if (!existsSync(src)) continue;
     const expected = readFileSync(src, "utf8");
     const dest = join(downstreamRoot, rel);
-    // sync-template.mts updating itself: write to downstream (self-update after Yes).
+    // sync-template.mts updating itself at scripts/sync-template.mts: write to downstream (self-update after Yes).
     if (!existsSync(dest)) {
       mkdirSync(dirname(dest), { recursive: true });
       writeFileSync(dest, expected);

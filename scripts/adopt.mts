@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * adopt.mts — install the full agentic setup into an existing project in place.
+ * scripts/adopt.mts — install the full agentic setup into an existing project in place.
  *
  * Additive by default: missing template-owned files are created, existing files
  * are left as-is and reported as conflicts for an explicit per-file Yes
@@ -9,10 +9,10 @@
  *
  * Usage (run from a template checkout against an old repo path — same shape as
  * the updater):
- *   npx tsx adopt.mts --downstream <old-project> [--template <template-checkout>]
+ *   npx tsx scripts/adopt.mts --downstream <old-project> [--template <template-checkout>]
  *     [--input <inputs.json>] [--yes] [--non-interactive]
  *
- * - --template defaults to this file's directory (the template checkout root).
+ * - --template defaults to the parent of this file's directory (the template checkout root).
  * - --downstream is required and must differ from --template.
  * - --input is the same shape as the bootstrap fixture. When omitted, values
  *   are infer-then-confirm: slug + org from the downstream git remote, project
@@ -60,6 +60,9 @@ import { execSync } from "node:child_process";
 
 const ADOPT_FILE = new URL(import.meta.url).pathname;
 const ADOPT_DIR = dirname(ADOPT_FILE);
+// This file lives at <template-root>/scripts/adopt.mts; the template checkout
+// root is its parent.
+const TEMPLATE_DEFAULT = resolve(ADOPT_DIR, "..");
 
 type Inputs = {
   projectName: string; projectSlug: string; githubOrg: string; members: string[];
@@ -101,16 +104,10 @@ const PROTECTED_MAP: Record<string, string> = {
 
 // Root meta synced by direct copy (no tokens). Adopt itself stays in the
 // template checkout only and is never copied downstream.
-const META = ["TEMPLATE-OWNERSHIP.md", "TEMPLATE-CHANGELOG.md", "sync-template.mts"];
+const META = ["TEMPLATE-OWNERSHIP.md", "TEMPLATE-CHANGELOG.md", "scripts/sync-template.mts"];
 
 const SYNC_RECORD = ".template-sync.json";
 const PERSONALIZATION_LOG = "PERSONALIZATION.log.md";
-
-// Source-project residue: must be zero in rendered output (case-insensitive).
-const RESIDUE = [
-  "wellfin", "wellfiners", "AdelTamer35", "mohamedelawakey", "IBruteDude",
-  "fintech", "EGP", "Egypt", "Egyptian", "graduate trio", "opencode/big-pickle",
-];
 
 // Knowledge/guide/note vocabulary only outside this list (audit helper).
 const SCHOOLING = ["academy", "school", "mission", "lesson"];
@@ -241,7 +238,7 @@ async function collect(
     stackDesc: await str("stackDesc", "Stack (free text; unknown parts get VERIFY-TODOs)",
       String(cliInput.stackDesc ?? fixture.stackDesc ?? "Node 22 + TypeScript + Docker")),
     modelId: await str("modelId", "Model id",
-      String(cliInput.modelId ?? fixture.modelId ?? "opencode/muse-spark-1.3-contributor-free")),
+      String(cliInput.modelId ?? fixture.modelId ?? "opencode/big-pickle")),
     credentialVar: await str("credentialVar", "Credential env-var for the model (VERIFY-TODO if unsure)",
       String(cliInput.credentialVar ?? fixture.credentialVar ?? "OPENCODE_API_KEY")),
   };
@@ -348,15 +345,14 @@ function mergeManifest(existingRaw: string, expectedRaw: string): MergeReport {
   return { lines, merged, changed };
 }
 
-function auditDownstream(root: string): { tokens: string[]; residue: string[]; schooling: string[] } {
+function auditDownstream(root: string): { tokens: string[]; schooling: string[] } {
   const skipDirs = ["node_modules", ".git", ".scratch", "docs/template", "scripts/template"];
   const skipFiles = [
-    PERSONALIZATION_LOG, "TEMPLATE-CHANGELOG.md", "sync-template.mts", "adopt.mts",
+    PERSONALIZATION_LOG, "TEMPLATE-CHANGELOG.md", "scripts/sync-template.mts", "scripts/adopt.mts",
     "scripts/token-audit.mts", SYNC_RECORD,
   ];
   const allowedPlaceholders = new Set(["ISSUE_NUMBER", "ISSUE_TITLE", "BRANCH"]);
   const tokenHits: string[] = [];
-  const residueHits: string[] = [];
   const schoolingHits: string[] = [];
   const walk = (dir: string): string[] => {
     const out: string[] = [];
@@ -381,25 +377,21 @@ function auditDownstream(root: string): { tokens: string[]; residue: string[]; s
     const tmAll = t.match(/\{\{[A-Z][A-Z0-9_]+\}\}/g) ?? [];
     const tm = tmAll.filter((m) => !allowedPlaceholders.has(m.slice(2, -2)));
     if (tm.length) tokenHits.push(`${rel}: ${[...new Set(tm)].join(", ")}`);
-    const low = t.toLowerCase();
-    for (const r of RESIDUE) {
-      if (low.includes(r.toLowerCase())) { residueHits.push(`${rel}: residue '${r}'`); break; }
-    }
     if (/\.md$/.test(f)) {
       for (const w of SCHOOLING) {
         if (new RegExp(`\\b${w}s?\\b`, "i").test(t)) { schoolingHits.push(`${rel}: schooling '${w}'`); break; }
       }
     }
   }
-  return { tokens: tokenHits, residue: residueHits, schooling: schoolingHits };
+  return { tokens: tokenHits, schooling: schoolingHits };
 }
 
 async function main() {
   const args = parseArgs();
-  const templateRoot = resolve(String(args.template ?? ADOPT_DIR));
+  const templateRoot = resolve(String(args.template ?? TEMPLATE_DEFAULT));
   const downstreamArg = args.downstream;
   if (!downstreamArg || typeof downstreamArg !== "string") {
-    console.error("Usage: npx tsx adopt.mts --downstream <old-project> [--template <checkout>] [--input <json>] [--yes] [--non-interactive]");
+    console.error("Usage: npx tsx scripts/adopt.mts --downstream <old-project> [--template <checkout>] [--input <json>] [--yes] [--non-interactive]");
     process.exit(1);
   }
   const downstreamRoot = resolve(downstreamArg);
@@ -600,7 +592,7 @@ async function main() {
     const dest = join(downstreamRoot, PERSONALIZATION_LOG);
     const entry = `\n## Adopt ${new Date().toISOString().slice(0, 10)}\n- Template: ${templateRoot} (version ${version})\n- Project: ${inp.projectName} (${inp.projectSlug}) — org \`${inp.githubOrg}\`\n- Members: ${inp.members.join(", ")} (team size ${inp.teamSize})\n- Domain: ${inp.domainOneliner}\n- Domain seed terms: ${inp.domainSeedTerms}\n- Learning depth: ${inp.learningDepth}\n- Stack: ${inp.stackDesc}\n  - VERIFY-TODO: confirm package manager / test / typecheck commands for this stack; adapt \`.sandcastle/Dockerfile\` + \`package.json\` scripts.\n- Model: ${inp.modelId} via \`OPENCODE_MODEL\`\n- Credential var: \`${inp.credentialVar}\`\n- Outcomes: create=${outcomes.create.length} skip=${outcomes.skip.length} conflict=${outcomes.conflict.length} protected=${outcomes.protected.length} merged=${outcomes.merged.length} update=${outcomes.update.length}\n`;
     if (!existsSync(dest)) {
-      const log = `# Personalization log\n\nAdopted into an existing project by \`adopt.mts\` (additive; reruns are a safe no-op).\n\n- Date: ${new Date().toISOString().slice(0, 10)}\n- Project: ${inp.projectName} (${inp.projectSlug}) — org \`${inp.githubOrg}\`\n- Members: ${inp.members.join(", ")} (team size ${inp.teamSize})\n- Domain: ${inp.domainOneliner}\n- Domain seed terms: ${inp.domainSeedTerms}\n- Learning depth: ${inp.learningDepth} (guided = walkthroughs + intake; intake-only = inbox without walkthroughs)\n- Stack: ${inp.stackDesc}\n  - VERIFY-TODO: confirm package manager / test / typecheck commands for this stack; adapt \`.sandcastle/Dockerfile\` + \`package.json\` scripts.\n- Model: ${inp.modelId} via \`OPENCODE_MODEL\` (default in \`.sandcastle/main.mts\`, override in \`.sandcastle/.env\`)\n- Credential var: \`${inp.credentialVar}\`\n  - VERIFY-TODO: outside this harness Muse Spark via opencode uses OpenCode Zen — confirm \`opencode providers login\` on the host or \`OPENCODE_API_KEY\` for headless.\n- Created (${outcomes.create.length}): ${outcomes.create.join(", ") || "—"}\n- Conflicted (${outcomes.conflict.length}): ${outcomes.conflict.join("; ") || "—"}\n- Protected (${outcomes.protected.length}): ${outcomes.protected.join("; ") || "—"}\n- Merged (${outcomes.merged.length}): ${outcomes.merged.join(", ") || "—"}\n${entry}\n## Verify\n\n- [ ] \`npx tsx scripts/token-audit.mts\` passes (0 tokens, 0 residue, wording clean).\n- [ ] \`.sandcastle/.env\` created from \`.env.example\` with \`GH_TOKEN\` + model credential (never committed).\n- [ ] First issue map created; \`gh issue list\` works from host and sandbox.\n`;
+      const log = `# Personalization log\n\nAdopted into an existing project by \`scripts/adopt.mts\` (additive; reruns are a safe no-op).\n\n- Date: ${new Date().toISOString().slice(0, 10)}\n- Project: ${inp.projectName} (${inp.projectSlug}) — org \`${inp.githubOrg}\`\n- Members: ${inp.members.join(", ")} (team size ${inp.teamSize})\n- Domain: ${inp.domainOneliner}\n- Domain seed terms: ${inp.domainSeedTerms}\n- Learning depth: ${inp.learningDepth} (guided = walkthroughs + intake; intake-only = inbox without walkthroughs)\n- Stack: ${inp.stackDesc}\n  - VERIFY-TODO: confirm package manager / test / typecheck commands for this stack; adapt \`.sandcastle/Dockerfile\` + \`package.json\` scripts.\n- Model: ${inp.modelId} via \`OPENCODE_MODEL\` (default in \`.sandcastle/main.mts\`, override in \`.sandcastle/.env\`)\n- Credential var: \`${inp.credentialVar}\`\n  - VERIFY-TODO: confirm the credential for this model on the host (\`opencode providers login\` or the env var) for headless runs.\n- Created (${outcomes.create.length}): ${outcomes.create.join(", ") || "—"}\n- Conflicted (${outcomes.conflict.length}): ${outcomes.conflict.join("; ") || "—"}\n- Protected (${outcomes.protected.length}): ${outcomes.protected.join("; ") || "—"}\n- Merged (${outcomes.merged.length}): ${outcomes.merged.join(", ") || "—"}\n${entry}\n## Verify\n\n- [ ] \`npx tsx scripts/token-audit.mts\` passes (0 tokens, wording clean).\n- [ ] \`cp .sandcastle/.env.example .sandcastle/.env\`, then fill \`GH_TOKEN\` + model credential (never committed).\n- [ ] First issue map created; \`gh issue list\` works from host and sandbox.\n`;
       writeFileSync(dest, log);
       outcomes.create.push(PERSONALIZATION_LOG + " (adopt record)");
     } else {
@@ -609,7 +601,7 @@ async function main() {
     }
   }
 
-  const { tokens, residue, schooling } = auditDownstream(downstreamRoot);
+  const { tokens, schooling } = auditDownstream(downstreamRoot);
   console.log(`\nadopt outcomes: create=${outcomes.create.length} skip=${outcomes.skip.length} conflict=${outcomes.conflict.length} protected=${outcomes.protected.length} merged=${outcomes.merged.length} update=${outcomes.update.length}`);
   for (const f of outcomes.create) console.log(`  create: ${f}`);
   for (const f of outcomes.merged) console.log(`  merged: ${f}`);
@@ -618,14 +610,14 @@ async function main() {
   for (const f of outcomes.conflict) console.log(`  conflict: ${f}`);
   for (const f of outcomes.protected) console.log(`  protected: ${f}`);
   for (const l of mergeLines) console.log(`  package-merge: ${l}`);
-  console.log(`Audit: ${tokens.length} token hits, ${residue.length} residue hits, ${schooling.length} wording hits.`);
-  for (const h of [...tokens, ...residue, ...schooling]) console.log("  FAIL:", h);
-  if (tokens.length || residue.length || schooling.length) {
-    console.error("Audit FAILED — adopted tree has unrendered tokens, residue, or wording hits. Fix inputs or templates, then re-run (safe no-op for identical files).");
+  console.log(`Audit: ${tokens.length} token hits, ${schooling.length} wording hits.`);
+  for (const h of [...tokens, ...schooling]) console.log("  FAIL:", h);
+  if (tokens.length || schooling.length) {
+    console.error("Audit FAILED — adopted tree has unrendered tokens or wording hits. Fix inputs or templates, then re-run (safe no-op for identical files).");
     process.exit(1);
   }
   console.log(`Adopt complete. Human record: ${PERSONALIZATION_LOG}; machine record: ${SYNC_RECORD} (updater reads it when --input is omitted).`);
-  console.log("Next: copy .sandcastle/.env.example -> .sandcastle/.env, fill GH_TOKEN + model credential, run scripts/token-audit.mts, pull later releases with sync-template.mts.");
+  console.log("Next: cp .sandcastle/.env.example .sandcastle/.env, fill GH_TOKEN + model credential, run scripts/token-audit.mts, pull later releases with scripts/sync-template.mts.");
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

@@ -8,6 +8,6 @@
   "teamSize": "3",
   "learningDepth": "guided",
   "stackDesc": "Node 22 + TypeScript + Docker",
-  "modelId": "opencode/muse-spark-1.3-contributor-free",
+  "modelId": "opencode/big-pickle",
   "credentialVar": "OPENCODE_API_KEY"
 }

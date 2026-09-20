@@ -2,28 +2,28 @@
 
 A reusable, parameterized full-clone starter for agent-assisted teams: lanes, Yes-gate commits, brief/wrap daily driver, knowledge intake with promotion rules, skills wiring, and a sandboxed runner — rendered for your project by a fire-once wizard, kept fresh by a pull-style updater.
 
-This repo is the template source. It is not a project itself. To start a project: clone, run the wizard once, get a clean project root with no template machinery left except the updater.
+This repo is the template source. It is not a project itself.
 
-## Start a new project
+## Start a new project (agent-driven)
 
-```sh
-git clone https://github.com/IBruteDude/agentic-project-template.git my-project
-cd my-project
-npx tsx bootstrap.mts
-# answer: project name/slug, org, members, domain one-liner + seed terms,
-# team size, learning depth (guided | intake-only), stack (free text),
-# model id (default opencode/muse-spark-1.3-contributor-free), credential var
-```
+Setup is a conversation with an agent, not a bare script run. The wizard collects your project's identity and offers no placeholder defaults for it — running `scripts/bootstrap.mts` alone will interrogate you field by field, and skipping answers is not an option. Paste this to your agent:
 
-The wizard renders every `docs/template/*.tmpl` and `scripts/template/*` token, writes `PERSONALIZATION.log.md`, runs the token + residue + wording audits, then deletes itself plus `docs/template/` and `scripts/template/` sources. What stays is a clean project plus `sync-template.mts` (the updater, added in #22) and `scripts/token-audit.mts`.
+> Set up a new project from the agentic-project-template. Clone `https://github.com/IBruteDude/agentic-project-template.git`, collect my project name/slug, org, members, and domain one-liner + seed terms (plus team size, learning depth, stack, model id, credential var as needed), run the wizard, then walk me through the VERIFY-TODOs and first-issue setup. Before we start, confirm I have `GH_TOKEN` and my model credential ready for `.sandcastle/.env`.
+
+What the agent does with you:
+
+1. Clones the template and collects identity: project name/slug, org, members, domain one-liner + seed terms. All required — interactive runs re-prompt, `--non-interactive` fails loudly on anything missing. Only team size (derived), learning depth, stack, model id (default `opencode/big-pickle`), and credential var (default `OPENCODE_API_KEY`) have defaults.
+2. Runs `npx tsx scripts/bootstrap.mts` (or `--input <json>` with the full identity shape). The wizard renders every `docs/template/*.tmpl` and `scripts/template/*` token, writes `PERSONALIZATION.log.md` (human record) plus `.template-sync.json` (machine inputs so later updates never re-ask), runs the token + wording audits, then deletes itself plus `docs/template/` and `scripts/template/` sources.
+3. Copies (never moves) the env template: `cp .sandcastle/.env.example .sandcastle/.env`, then fills `GH_TOKEN` + the model credential. `.env` files are gitignored and never committed — moving would delete the template other teammates need.
+4. Gives the new project a clean tree: `rm -rf .git && git init && git add -A && git commit -m "chore: seed from agentic-project-template"`, then creates the real repo/origin. What stays is a clean project plus `scripts/sync-template.mts` (the updater), `scripts/token-audit.mts`, `TEMPLATE-OWNERSHIP.md`, `TEMPLATE-CHANGELOG.md`, and both records — with zero template git history.
 
 ## Layout (root stays clean)
 
 - Prose templates: `docs/template/` — `AGENTS`, `CONTRIBUTING`, `CONTEXT`, `docs/agents/*`, knowledge inbox `INDEX`, `docs/adr/` seed.
 - Runnable templates: `scripts/template/` — `package.json`, `.sandcastle/*`, `.gitignore`, skills lock, fixtures, audit.
-- `bootstrap.mts` — fire-once wizard (self-deletes). Reruns are not supported; hand-tune after.
-- `sync-template.mts` — pull-style updater (per-file Yes-gate; project-owned never overwritten).
-- `adopt.mts` — one-time adopter for existing projects (additive; per-file Yes on conflicts; glossary + README always protected; manifest-only merge). Stays in this checkout; downstream keeps the updater plus a machine sync record.
+- `scripts/bootstrap.mts` — fire-once wizard (self-deletes). Reruns are not supported; hand-tune after.
+- `scripts/sync-template.mts` — pull-style updater (per-file Yes-gate; project-owned never overwritten).
+- `scripts/adopt.mts` — one-time adopter for existing projects (additive; per-file Yes on conflicts; glossary + README always protected; manifest-only merge). Stays in this checkout; downstream keeps the updater plus a machine sync record.
 - `TEMPLATE-OWNERSHIP.md` — single visible manifest: template-owned vs project-owned.
 - `TEMPLATE-CHANGELOG.md` — every release with a human-readable entry; judge before pulling.
 
@@ -33,12 +33,12 @@ Install the full rails into a lived-in repo in place — no clone-transplant dan
 
 ```sh
 git clone https://github.com/IBruteDude/agentic-project-template.git /tmp/template
-npx tsx /tmp/template/adopt.mts --downstream ~/projects/old-project
+npx tsx /tmp/template/scripts/adopt.mts --downstream ~/projects/old-project
 # infer-then-confirm: slug + org from the downstream git remote, name from its
 # package manifest (directory-name fallback), members + domain + stack + model
 # prompted with fixture defaults; every inferred value shown for confirmation.
 # Non-interactive fixture shape:
-npx tsx /tmp/template/adopt.mts --template /tmp/template --downstream /tmp/old-proj \
+npx tsx /tmp/template/scripts/adopt.mts --template /tmp/template --downstream /tmp/old-proj \
   --input /tmp/template/scripts/template/fixtures/sample-inputs.json --yes --non-interactive
 ```
 
@@ -50,7 +50,7 @@ Collision policy (additive by default; full rails only, no subset picker):
 - `package.json` is the sole structural merge: missing scripts and dependencies are added, existing entries are kept, dependency version conflicts resolve semver-higher-wins with a report line.
 - Anything outside the template-owned list (product code, team-created files, local-only paths) is never written.
 
-Records: human `PERSONALIZATION.log.md` (inputs plus created vs conflicted vs merged vs protected, consistent with bootstrap; created when absent, appended when present) plus machine `.template-sync.json` (template source, version, inputs). The updater reads the sync record when `--input` is omitted, so adopted projects pull later releases with the same updater and without re-asking.
+Records: human `PERSONALIZATION.log.md` (inputs plus created vs conflicted vs merged vs protected, consistent with bootstrap; created when absent, appended when present) plus machine `.template-sync.json` (template source, version, inputs). Both bootstrap and adopt write it; the updater reads it when `--input` is omitted, so projects pull later releases without re-asking.
 
 Idempotency: reruns are a safe no-op — identical files skip, conflicts re-report, protected stay untouched, the merged manifest skips once applied. Nothing overwrites without an interactive per-file Yes.
 
@@ -74,6 +74,6 @@ GitHub Issues with the closed label set (`wayfinder:map`, `wayfinder:research|pr
 
 ## Verification
 
-- Rendered-project audit from fixture inputs in a scratch clone (seam 1): zero `{{TOKENS}}`, zero residue, wording clean outside vendored skills.
-- Updater round-trip from a fixture bump into a diverged sample (seam 2, #22).
+- Rendered-project audit from fixture inputs in a scratch clone (seam 1): zero `{{TOKENS}}`, wording clean outside vendored skills.
+- Updater round-trip from a fixture bump into a diverged sample (seam 2).
 - Wording audit by search (seam 3): no academy/school/mission/lesson outside vendored skills and changelog history.

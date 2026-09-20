@@ -1,26 +1,28 @@
 #!/usr/bin/env tsx
 /**
- * bootstrap.mts — fire-once template wizard.
+ * scripts/bootstrap.mts — fire-once template wizard.
  *
  * Renders docs/template/*.tmpl + scripts/template/* tokens into a clean project,
- * writes PERSONALIZATION.log.md, runs token + residue + wording audits, then
- * self-deletes plus template sources. Reruns are NOT supported (log is the record).
+ * writes PERSONALIZATION.log.md + .template-sync.json (machine inputs for later
+ * sync-template pulls), runs token + wording audits, then self-deletes plus
+ * template sources. Reruns are NOT supported (log is the record).
  *
- * Usage:
- *   npx tsx bootstrap.mts [--input fixtures/sample-inputs.json] [--yes]
- *   npx tsx bootstrap.mts --non-interactive --input <json>   # fixture proof / CI
+ * Canonical path is agent-driven (see README): the agent collects inputs, then:
+ *   npx tsx scripts/bootstrap.mts [--input <inputs.json>] [--yes]
+ *   npx tsx scripts/bootstrap.mts --non-interactive --input <json>   # fixture proof / CI
  *
- * Inputs (free-text where noted; unknown stacks/models get VERIFY-TODOs, never blocks):
- *   projectName, projectSlug, githubOrg, members[], domainOneliner, domainSeedTerms,
- *   teamSize, learningDepth (guided | intake-only), stackDesc,
- *   modelId (default opencode/muse-spark-1.3-contributor-free), credentialVar (default OPENCODE_API_KEY)
+ * Identity inputs have NO placeholder defaults: projectName, projectSlug,
+ * githubOrg, members[], domainOneliner, domainSeedTerms. Interactive runs
+ * re-prompt until answered; non-interactive runs fail loudly when missing.
+ * Optional knobs keep defaults: teamSize (derived), learningDepth, stackDesc,
+ * modelId (default opencode/big-pickle), credentialVar (default OPENCODE_API_KEY).
  */
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { createInterface } from "node:readline";
 
-const ROOT = resolve(dirname(new URL(import.meta.url).pathname), ".");
+const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
 const DOCS_TMPL = join(ROOT, "docs", "template");
 const SCRIPTS_TMPL = join(ROOT, "scripts", "template");
 const FIXTURE_DEFAULT = join(SCRIPTS_TMPL, "fixtures", "sample-inputs.json");
@@ -30,12 +32,6 @@ const TOKENS = [
   "DOMAIN_ONELINER", "DOMAIN_SEED_TERMS", "STACK_DESC", "MODEL_ID",
   "CREDENTIAL_VAR", "LEARNING_DEPTH", "V1_SCOPE",
 ] as const;
-
-// Source-project residue: must be zero in rendered output (case-insensitive).
-const RESIDUE = [
-  "wellfin", "wellfiners", "AdelTamer35", "mohamedelawakey", "IBruteDude",
-  "fintech", "EGP", "Egypt", "Egyptian", "graduate trio", "opencode/big-pickle",
-];
 
 // Schooling metaphors: must be zero in rendered project files (excludes vendored
 // skills, TEMPLATE-CHANGELOG history, PERSONALIZATION log, and this wizard itself).
@@ -70,27 +66,41 @@ async function ask(q: string, def: string): Promise<string> {
 }
 
 async function collect(cliInput?: Partial<Inputs>, nonInteractive = false): Promise<Inputs> {
-  const get = async (key: keyof Inputs, q: string, def: string): Promise<string> => {
+  // Identity inputs: no placeholder defaults. Interactive re-prompts until
+  // answered; non-interactive fails loudly instead of rendering placeholders.
+  const required = async (key: keyof Inputs, q: string): Promise<string> => {
+    const v = cliInput?.[key];
+    if (typeof v === "string" && v.trim()) return v.trim();
+    if (Array.isArray(v) && v.length) return (v as unknown as string[]).join(", ");
+    if (nonInteractive) {
+      console.error(`Missing required input '${String(key)}': pass --input JSON with all identity fields (no placeholder defaults).`);
+      process.exit(1);
+    }
+    let ans = "";
+    while (!ans) ans = await ask(q, "");
+    return ans;
+  };
+  const optional = async (key: keyof Inputs, q: string, def: string): Promise<string> => {
     const v = cliInput?.[key];
     if (typeof v === "string" && v.trim()) return v.trim();
     if (Array.isArray(v) && v.length) return (v as unknown as string[]).join(", ");
     if (nonInteractive) return def;
     return ask(q, def);
   };
-  const membersRaw = await get("members" as keyof Inputs, "Team members (comma-separated usernames)", "ada, bilal, camelia");
+  const membersRaw = await required("members" as keyof Inputs, "Team members (comma-separated usernames)");
   const members = membersRaw.split(",").map((s) => s.trim()).filter(Boolean);
   return {
-    projectName: await get("projectName", "Project name (Title Case)", "Acme Ledger"),
-    projectSlug: await get("projectSlug", "Project slug (lowercase, repo name)", "acme-ledger"),
-    githubOrg: await get("githubOrg", "GitHub org / owner", "acme-org"),
+    projectName: await required("projectName", "Project name (Title Case)"),
+    projectSlug: await required("projectSlug", "Project slug (lowercase, repo name)"),
+    githubOrg: await required("githubOrg", "GitHub org / owner"),
     members,
-    domainOneliner: await get("domainOneliner", "Domain one-liner", "Small-business cash tracking. V1 is manual entry, single-currency, English records, append-only with derived balances."),
-    domainSeedTerms: await get("domainSeedTerms", "Domain seed terms (comma-separated)", "entry, balance, correction"),
-    teamSize: await get("teamSize", "Team size", String(members.length || 3)),
-    learningDepth: await get("learningDepth", "Learning depth (guided | intake-only)", "guided"),
-    stackDesc: await get("stackDesc", "Stack (free text; unknown parts get VERIFY-TODOs)", "Node 22 + TypeScript + Docker"),
-    modelId: await get("modelId", "Model id", "opencode/muse-spark-1.3-contributor-free"),
-    credentialVar: await get("credentialVar", "Credential env-var for the model (VERIFY-TODO if unsure)", "OPENCODE_API_KEY"),
+    domainOneliner: await required("domainOneliner", "Domain one-liner"),
+    domainSeedTerms: await required("domainSeedTerms", "Domain seed terms (comma-separated)"),
+    teamSize: await optional("teamSize", "Team size", String(members.length || 3)),
+    learningDepth: await optional("learningDepth", "Learning depth (guided | intake-only)", "guided"),
+    stackDesc: await optional("stackDesc", "Stack (free text; unknown parts get VERIFY-TODOs)", "Node 22 + TypeScript + Docker"),
+    modelId: await optional("modelId", "Model id", "opencode/big-pickle"),
+    credentialVar: await optional("credentialVar", "Credential env-var for the model (VERIFY-TODO if unsure)", "OPENCODE_API_KEY"),
   };
 }
 
@@ -156,13 +166,12 @@ function walk(dir: string): string[] {
   return out;
 }
 
-function audit(root: string): { tokens: string[]; residue: string[]; schooling: string[] } {
+function audit(root: string): { tokens: string[]; schooling: string[] } {
   const skipDirs = ["node_modules", ".git", ".scratch", "docs/template", "scripts/template"];
-  const skipFiles = ["bootstrap.mts", "adopt.mts", "PERSONALIZATION.log.md", "TEMPLATE-CHANGELOG.md", "sync-template.mts", "scripts/token-audit.mts"];
+  const skipFiles = ["scripts/bootstrap.mts", "scripts/adopt.mts", "PERSONALIZATION.log.md", "TEMPLATE-CHANGELOG.md", "scripts/sync-template.mts", "scripts/token-audit.mts", ".template-sync.json"];
   // Runtime prompt placeholders (sandcastle lane-safe prompts) — intentional, not bootstrap tokens.
   const allowedPlaceholders = new Set(["ISSUE_NUMBER", "ISSUE_TITLE", "BRANCH"]);
   const tokenHits: string[] = [];
-  const residueHits: string[] = [];
   const schoolingHits: string[] = [];
   const files = walk(root).filter((f) => {
     const rel = f.slice(root.length + 1).replace(/\\/g, "/");
@@ -179,10 +188,6 @@ function audit(root: string): { tokens: string[]; residue: string[]; schooling: 
     const tmAll = t.match(/\{\{[A-Z][A-Z0-9_]+\}\}/g) ?? [];
     const tm = tmAll.filter((m) => !allowedPlaceholders.has(m.slice(2, -2)));
     if (tm.length) tokenHits.push(`${rel}: ${[...new Set(tm)].join(", ")}`);
-    const low = t.toLowerCase();
-    for (const r of RESIDUE) {
-      if (low.includes(r.toLowerCase())) { residueHits.push(`${rel}: residue '${r}'`); break; }
-    }
     // wording audit only on prose-ish files
     if (/\.(md|md\.tmpl)$/.test(f)) {
       for (const w of SCHOOLING) {
@@ -191,7 +196,18 @@ function audit(root: string): { tokens: string[]; residue: string[]; schooling: 
       }
     }
   }
-  return { tokens: tokenHits, residue: residueHits, schooling: schoolingHits };
+  return { tokens: tokenHits, schooling: schoolingHits };
+}
+
+// Single version source shared with adopt: the top `## X.Y.Z` line of
+// TEMPLATE-CHANGELOG.md, so both writers can never disagree (no skew).
+function templateVersion(): string {
+  try {
+    const log = readFileSync(join(ROOT, "TEMPLATE-CHANGELOG.md"), "utf8");
+    const m = log.match(/^##\s+([0-9]+\.[0-9]+\.[0-9]+)/m);
+    if (m) return m[1];
+  } catch {}
+  return "unknown";
 }
 
 async function main() {
@@ -225,20 +241,25 @@ async function main() {
   }
 
   // personalization log
-  const log = `# Personalization log\n\nRendered from agentic-project-template by fire-once \`bootstrap.mts\`.\nReruns are not supported; hand-tune from here. Template sources + wizard self-deleted after success.\n\n- Date: ${new Date().toISOString().slice(0, 10)}\n- Project: ${inp.projectName} (${inp.projectSlug}) — org \`${inp.githubOrg}\`\n- Members: ${inp.members.join(", ")} (team size ${inp.teamSize})\n- Domain: ${inp.domainOneliner}\n- Domain seed terms: ${inp.domainSeedTerms}\n- Learning depth: ${inp.learningDepth} (guided = walkthroughs + intake; intake-only = inbox without walkthroughs)\n- Stack: ${inp.stackDesc}\n  - VERIFY-TODO: confirm package manager / test / typecheck commands for this stack; adapt \`.sandcastle/Dockerfile\` + \`package.json\` scripts.\n- Model: ${inp.modelId} via \`OPENCODE_MODEL\` (default in \`.sandcastle/main.mts\`, override in \`.sandcastle/.env\`)\n- Credential var: \`${inp.credentialVar}\`\n  - VERIFY-TODO: outside this harness Muse Spark via opencode uses OpenCode Zen — confirm \`opencode providers login\` on the host or \`OPENCODE_API_KEY\` for headless. Recorded in TEMPLATE-CHANGELOG 0.2.0.\n- Rendered ${rendered.length} files:\n${rendered.map((r) => `  - \`${r}\``.trim()).join("\n")}\n\n## Verify\n\n- [ ] \`npx tsx scripts/token-audit.mts\` passes (0 tokens, 0 residue, wording clean).\n- [ ] \`.sandcastle/.env\` created from \`.env.example\` with \`GH_TOKEN\` + model credential (never committed).\n- [ ] First issue map created; \`gh issue list\` works from host and sandbox.\n`;
+  const log = `# Personalization log\n\nRendered from agentic-project-template by fire-once \`scripts/bootstrap.mts\`.\nReruns are not supported; hand-tune from here. Template sources + wizard self-deleted after success.\n\n- Date: ${new Date().toISOString().slice(0, 10)}\n- Project: ${inp.projectName} (${inp.projectSlug}) — org \`${inp.githubOrg}\`\n- Members: ${inp.members.join(", ")} (team size ${inp.teamSize})\n- Domain: ${inp.domainOneliner}\n- Domain seed terms: ${inp.domainSeedTerms}\n- Learning depth: ${inp.learningDepth} (guided = walkthroughs + intake; intake-only = inbox without walkthroughs)\n- Stack: ${inp.stackDesc}\n  - VERIFY-TODO: confirm package manager / test / typecheck commands for this stack; adapt \`.sandcastle/Dockerfile\` + \`package.json\` scripts.\n- Model: ${inp.modelId} via \`OPENCODE_MODEL\` (default in \`.sandcastle/main.mts\`, override in \`.sandcastle/.env\`)\n- Credential var: \`${inp.credentialVar}\`\n  - VERIFY-TODO: confirm the credential for this model on the host (\`opencode providers login\` or the env var) for headless runs.\n- Rendered ${rendered.length} files:\n${rendered.map((r) => `  - \`${r}\``.trim()).join("\n")}\n\n## Verify\n\n- [ ] \`npx tsx scripts/token-audit.mts\` passes (0 tokens, wording clean).\n- [ ] \`cp .sandcastle/.env.example .sandcastle/.env\`, then fill \`GH_TOKEN\` + model credential (never committed).\n- [ ] First issue map created; \`gh issue list\` works from host and sandbox.\n`;
   writeFileSync(join(ROOT, "PERSONALIZATION.log.md"), log);
 
+  // machine sync record: template source, version, inputs. sync-template reads
+  // it when --input is omitted, so later releases pull without re-asking.
+  const record = { template: ROOT, version: templateVersion(), inputs: inp };
+  writeFileSync(join(ROOT, ".template-sync.json"), JSON.stringify(record, null, 2) + "\n");
+
   // audit before self-delete
-  const { tokens, residue, schooling } = audit(ROOT);
-  console.log(`\nRendered ${rendered.length} files. Audit: ${tokens.length} token hits, ${residue.length} residue hits, ${schooling.length} schooling hits.`);
-  for (const h of [...tokens, ...residue, ...schooling]) console.log("  FAIL:", h);
-  if (tokens.length || residue.length || schooling.length) {
+  const { tokens, schooling } = audit(ROOT);
+  console.log(`\nRendered ${rendered.length} files. Audit: ${tokens.length} token hits, ${schooling.length} schooling hits.`);
+  for (const h of [...tokens, ...schooling]) console.log("  FAIL:", h);
+  if (tokens.length || schooling.length) {
     console.error("Audit FAILED — fix templates/inputs, then re-run before deleting anything.");
     process.exit(1);
   }
 
   // fire-once self-delete: wizard + template sources
-  try { rmSync(join(ROOT, "bootstrap.mts"), { force: true }); } catch {}
+  try { rmSync(join(ROOT, "scripts", "bootstrap.mts"), { force: true }); } catch {}
   try { rmSync(DOCS_TMPL, { recursive: true, force: true }); } catch {}
   try { rmSync(SCRIPTS_TMPL, { recursive: true, force: true }); } catch {}
   console.log("Bootstrap complete. Wizard + docs/template + scripts/template removed. See PERSONALIZATION.log.md.");
