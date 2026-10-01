@@ -1,5 +1,6 @@
 # template repo itself (not rendered projects)
 node_modules/
+package-lock.json
 .scratch/
 .env
 *.log
