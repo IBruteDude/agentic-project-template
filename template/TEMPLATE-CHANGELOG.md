@@ -2,6 +2,12 @@
 
 Every template release carries a human-readable entry so a downstream team can judge whether an update matters before pulling with `scripts/sync-template.mts` (from `--template <checkout>/template`). Newest first.
 
+## 0.9.0 — 2026-10-03 — Vision grounding + pasteable next-step prompts in the AGENTS seed
+
+- The AGENTS seed (`template/docs/AGENTS.md.tmpl`, mirrored in this repo's root `AGENTS.md`) gains two `###` sections: **Vision grounding** — before planning or reconciling a feature request, read `docs/VISION.md` first and cite the sections served (`Serves §4 …`), confirming `§8 Non-goals and exclusions` / `§10 Egypt-first edge` don't exclude it; if no section fits, write `OUT OF VISION` and ask before continuing. **Example prompts for next steps** — any next step meant for a different session ends with a fenced block the human can paste into a fresh one: instruction, read-first list, definition of done; sequences in one block, independent steps in separate blocks; same-session work and handoff documents exempt.
+- No new tokens and no new files: a repo opts into vision by creating `docs/VISION.md`. Where that file is absent the rule skips itself silently, so existing downstreams are unaffected.
+- Migration: existing downstreams see `NOTICE: AGENTS.md seed changed` on next sync (seed-only, never overwritten) — hand-merge the two sections if wanted.
+
 ## 0.8.0 — 2026-10-01 — Quarantine: template payload lives under `template/`
 
 - Breaking layout: `docs/template/` → `template/docs/`, `scripts/template/` → `template/scripts/`, runners → `template/bootstrap.mts` + `template/adopt.mts` + `template/sync-template.mts`, manifest + changelog + template README → `template/`. No shims at old paths.

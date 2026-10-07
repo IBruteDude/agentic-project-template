@@ -12,9 +12,17 @@ Using the default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`
 
 Single-context layout (root `CONTEXT.md` + `docs/adr/`). See `docs/agents/domain.md`.
 
+### Vision grounding
+
+Before planning or reconciling a feature request — in a planning skill (`to-spec`, `to-tickets`, `wayfinder`, `brief`, any grilling skill) or ad-hoc ("should we build X?") — read `docs/VISION.md` first; if the file doesn't exist, skip this rule silently. When it does exist, cite in the reply the sections the feature serves (e.g. `Serves §4 Core loop → Monitoring`) and confirm it is not excluded by `§8 Non-goals and exclusions` or `§10 Egypt-first edge`. If no section fits, write `OUT OF VISION` and ask before continuing. Fires when planning actually starts, not on routine claims of already-planned tickets.
+
 ### Git workflow
 
 Work in one lane: primary (`main`), scoped (`NN-<slug>` per issue), or personal (`personal/<user>/<topic>`, local-only). Show diff + message and wait for Yes before every commit; commit approval on a pre-authorized scoped branch carries push approval; `personal/*` is never pushed. See `docs/agents/git-workflow.md`.
+
+### Example prompts for next steps
+
+Whenever you name a next step that an agent would do in a **different** session, end with a fenced code block the human can paste into a fresh one. The block must stand alone: the instruction, the read-first list (`AGENTS.md`, `docs/VISION.md` when the step is planning and the repo has one, plus issue number and target branch when they exist), and what done looks like. A sequence of steps goes in one block; independent steps get one block each. Drop the read-first list only when it would be noise. Exempt: work you are about to do yourself in this same session, and handoff documents (written for an agent, not pasted by a human).
 
 ### Contributing
 
