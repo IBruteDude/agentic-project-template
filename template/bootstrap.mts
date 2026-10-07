@@ -168,7 +168,9 @@ function walk(dir: string): string[] {
 
 function audit(root: string): { tokens: string[]; schooling: string[] } {
   const skipDirs = ["node_modules", ".git", ".scratch", "template"];
-  const skipFiles = ["template/bootstrap.mts", "template/adopt.mts", "PERSONALIZATION.log.md", "template/TEMPLATE-CHANGELOG.md", "template/sync-template.mts", "scripts/token-audit.mts", ".template-sync.json"];
+  // Root README.md documents {{TOKENS}} literally (verification seam description),
+  // like the changelog history and this wizard itself.
+  const skipFiles = ["README.md", "template/bootstrap.mts", "template/adopt.mts", "PERSONALIZATION.log.md", "template/TEMPLATE-CHANGELOG.md", "template/sync-template.mts", "scripts/token-audit.mts", ".template-sync.json"];
   // Runtime prompt placeholders (sandcastle lane-safe prompts) — intentional, not bootstrap tokens.
   const allowedPlaceholders = new Set(["ISSUE_NUMBER", "ISSUE_TITLE", "BRANCH"]);
   const tokenHits: string[] = [];
