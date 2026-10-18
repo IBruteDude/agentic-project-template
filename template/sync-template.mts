@@ -62,11 +62,15 @@ const TMPL_MAP: Record<string, string> = {
   "scripts/sandcastle-implement-prompt.md.tmpl": ".sandcastle/implement-prompt.md",
   "scripts/sandcastle-review-prompt.md.tmpl": ".sandcastle/review-prompt.md",
   "scripts/token-audit.mts.tmpl": "scripts/token-audit.mts",
+  "scripts/build-reports-index.mts.tmpl": "scripts/build-reports-index.mts",
+  "scripts/pages-reports.yml.tmpl": ".github/workflows/pages-reports.yml",
   // Static team skills (verified token-free; render is a no-op).
   "scripts/skills/brief/SKILL.md": ".agents/skills/brief/SKILL.md",
   "scripts/skills/brief/agents/openai.yaml": ".agents/skills/brief/agents/openai.yaml",
   "scripts/skills/wrap/SKILL.md": ".agents/skills/wrap/SKILL.md",
   "scripts/skills/wrap/agents/openai.yaml": ".agents/skills/wrap/agents/openai.yaml",
+  "scripts/skills/publish-report/SKILL.md": ".agents/skills/publish-report/SKILL.md",
+  "scripts/skills/publish-report/agents/openai.yaml": ".agents/skills/publish-report/agents/openai.yaml",
 };
 
 // Root meta synced by direct copy (no tokens): template-payload source -> downstream dest.

@@ -31,3 +31,7 @@ Whenever you name a next step that an agent would do in a **different** session,
 ### Contributing
 
 No repo `CONTRIBUTING.md` yet — gap to close, rendered from `template/docs/CONTRIBUTING.md.tmpl`. Until it exists, humans start at `docs/agents/git-workflow.md` (lanes + commit gates). Point newcomers there before anything else.
+
+### Reports
+
+Agent-published HTML reports live on GitHub Pages (`reports/<date>-<slug>/` plus an index). To publish or unpublish one, use the `publish-report` skill.

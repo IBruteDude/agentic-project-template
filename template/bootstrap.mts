@@ -136,6 +136,8 @@ function destFor(srcRel: string): string | null {
     "template/scripts/sandcastle-implement-prompt.md.tmpl": ".sandcastle/implement-prompt.md",
     "template/scripts/sandcastle-review-prompt.md.tmpl": ".sandcastle/review-prompt.md",
     "template/scripts/token-audit.mts.tmpl": "scripts/token-audit.mts",
+    "template/scripts/build-reports-index.mts.tmpl": "scripts/build-reports-index.mts",
+    "template/scripts/pages-reports.yml.tmpl": ".github/workflows/pages-reports.yml",
   };
   if (scriptsMap[norm]) return join(ROOT, scriptsMap[norm]);
   return null;
