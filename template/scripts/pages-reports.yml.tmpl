@@ -1,12 +1,18 @@
 # Deploys the orphan `gh-pages` branch (agent-published HTML reports) to
 # GitHub Pages. The `publish-report` skill commits report folders plus a
-# regenerated index; this workflow only builds the artifact and deploys it.
+# regenerated index, then fires a `repository_dispatch` of type
+# `pages-reports` — dispatches run this default-branch copy of the
+# workflow, since a bare `gh-pages` branch carries no workflow file of
+# its own. The `push: branches: [gh-pages]` trigger stays for checkouts
+# that do track the workflow file on that branch.
 # Requires Pages enabled with source "GitHub Actions" (one-time repo setting).
 name: Deploy reports to Pages
 
 on:
   push:
     branches: [gh-pages]
+  repository_dispatch:
+    types: [pages-reports]
 
 permissions:
   contents: read
