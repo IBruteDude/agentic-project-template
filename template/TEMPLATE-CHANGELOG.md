@@ -2,6 +2,13 @@
 
 Every template release carries a human-readable entry so a downstream team can judge whether an update matters before pulling with `scripts/sync-template.mts` (from `--template <checkout>/template`). Newest first.
 
+## 0.10.1 — 2026-10-19 — A real typecheck seam (root tsconfig)
+
+- New payload file `template/scripts/tsconfig.json.tmpl`, rendered to the project's `tsconfig.json` on every render path (`bootstrap` script map, `adopt`, `sync`): strict TS targeting ES2023 with nodenext module resolution, `allowImportingTsExtensions` + `noEmit`, node types for `@types/node` 22. Include covers `scripts/`, `template/` (inert downstream after self-delete), and `.sandcastle/`.
+- The template repo dogfoodes `tsconfig.json` byte-identical to the payload: `npm run typecheck` stopped printing `tsc --help` and now type-checks `template/*.mts` + root `scripts/*.mts`, exiting 0 (a seeded type error makes it exit 2 with the file named — verified, then removed).
+- The rendered `.sandcastle/main.mts` had two latent type failures against the pinned `@ai-hero/sandcastle` 0.12 types, invisible until this seam existed (the payload stores the file as `.mts.tmpl`, so root checking never saw it): the planner `run()` now uses the `Output.string` overload for a typed `.output` string and `createSandbox()` passes its now-required `sandbox: docker()`.
+- Fixture proof (scratch, 2026-10-19): fresh render 32 files, audit 0/0, self-delete intact; `npm install --ignore-scripts` then `npm run typecheck` inside the rendered tree exit 0.
+
 ## 0.10.0 — 2026-10-18 — Reports rails: agent-published HTML via GitHub Pages
 
 - New skill `$publish-report` (`template/scripts/skills/publish-report/`, rendered to downstream `.agents/skills/publish-report/`): publishes a static `index.html` folder to the orphan `gh-pages` branch under `reports/<date>-<slug>/` and hands back the public `https://<owner>.github.io/<repo>/reports/<slug>/` URL; unpublish deletes the folder and regenerates the index. Guards per ADR-0002 (`docs/adr/0002-pages-for-agent-reports.md`): ≤10MB payload, `index.html` entry required, UTC-dated slug with collision suffixing, no truncation, no secrets.

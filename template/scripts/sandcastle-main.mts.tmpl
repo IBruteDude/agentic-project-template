@@ -1,4 +1,4 @@
-import { run, opencode } from "@ai-hero/sandcastle";
+import { run, opencode, Output } from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 
 // {{PROJECT_NAME}} Sandcastle entry — lane-safe adapter
@@ -23,10 +23,11 @@ async function main() {
     sandbox: docker(),
     promptFile: ".sandcastle/plan-prompt.md",
     maxIterations: 1,
+    output: Output.string({ tag: "plan" }),
   });
 
   // Extract <plan> JSON — if empty, nothing to do
-  const planMatch = planResult.output?.match(/<plan>([\s\S]*?)<\/plan>/);
+  const planMatch = planResult.output.match(/<plan>([\s\S]*?)<\/plan>/);
   if (!planMatch) {
     console.log("No plan found — no unblocked ready-for-agent issues or planner didn't emit <plan>.");
     return;
@@ -64,6 +65,7 @@ async function main() {
         // Branch strategy: caller supplies NN-<slug>, sandbox reuses worktree per ADR-0003-style reuse
         const { createSandbox } = await import("@ai-hero/sandcastle");
         const sandbox = await createSandbox({
+          sandbox: docker(),
           branch: issue.branch,
           // Keep heavy dirs out of the worktree diff; npm install runs inside sandbox if needed
           copyToWorktree: ["node_modules"],

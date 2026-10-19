@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "checkJs": false,
+    "types": ["node"]
+  },
+  "include": [
+    "scripts/**/*.mts",
+    "template/**/*.mts",
+    ".sandcastle/**/*.mts"
+  ]
+}

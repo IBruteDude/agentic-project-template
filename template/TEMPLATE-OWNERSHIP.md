@@ -13,6 +13,7 @@ Template sources live under `template/` in this checkout (`template/docs/`, `tem
 - `skills-lock.json` (pinned upstream-skill manifest; restored via `npx skills@latest experimental_install`, bumps via `npx skills update`) + `.agents/skills/` (upstream set, committed; plus template-owned `brief` + `wrap` + `publish-report` team skills; excluded from wording audit)
 - `scripts/build-reports-index.mts` (report index generator for the Pages site)
 - `.github/workflows/pages-reports.yml` (stock Pages deploy for the `gh-pages` branch)
+- `tsconfig.json` (strict TS config for the rendered `.mts` rails; the template repo dogfoodes a byte-identical copy)
 - `docs/knowledge/inbox/INDEX.md` (structure; notes themselves are project-owned)
 - `docs/adr/README.md` + `docs/adr/0000-template.md` (seed + blank; numbered decisions are project-owned)
 - `scripts/token-audit.mts` (audit tool: unrendered tokens + wording)

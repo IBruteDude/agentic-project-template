@@ -64,6 +64,7 @@ const TMPL_MAP: Record<string, string> = {
   "scripts/token-audit.mts.tmpl": "scripts/token-audit.mts",
   "scripts/build-reports-index.mts.tmpl": "scripts/build-reports-index.mts",
   "scripts/pages-reports.yml.tmpl": ".github/workflows/pages-reports.yml",
+  "scripts/tsconfig.json.tmpl": "tsconfig.json",
   // Static team skills (verified token-free; render is a no-op).
   "scripts/skills/brief/SKILL.md": ".agents/skills/brief/SKILL.md",
   "scripts/skills/brief/agents/openai.yaml": ".agents/skills/brief/agents/openai.yaml",
