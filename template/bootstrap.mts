@@ -21,6 +21,7 @@
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { createInterface } from "node:readline";
+import { spawnSync } from "node:child_process";
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
 const DOCS_TMPL = join(ROOT, "template", "docs");
@@ -136,6 +137,7 @@ function destFor(srcRel: string): string | null {
     "template/scripts/sandcastle-implement-prompt.md.tmpl": ".sandcastle/implement-prompt.md",
     "template/scripts/sandcastle-review-prompt.md.tmpl": ".sandcastle/review-prompt.md",
     "template/scripts/token-audit.mts.tmpl": "scripts/token-audit.mts",
+    "template/scripts/lock-preflight.mts.tmpl": "scripts/lock-preflight.mts",
     "template/scripts/build-reports-index.mts.tmpl": "scripts/build-reports-index.mts",
     "template/scripts/pages-reports.yml.tmpl": ".github/workflows/pages-reports.yml",
     "template/scripts/tsconfig.json.tmpl": "tsconfig.json",
@@ -273,6 +275,18 @@ async function main() {
     console.error("Audit FAILED — fix templates/inputs, then re-run before deleting anything.");
     process.exit(1);
   }
+
+  // Lock preflight (thin, best-effort): the real check is the rendered
+  // scripts/lock-preflight.mts (standalone: `npx tsx scripts/lock-preflight.mts`,
+  // exit 1 = dead upstream pin). Surfaced here without failing the render so an
+  // offline run stays clean; a dead pin still fails `skills experimental_install`
+  // on its own (downstream impact, separate seam).
+  try {
+    const pre = spawnSync("npx", ["tsx", "scripts/lock-preflight.mts"], { cwd: ROOT, encoding: "utf8" });
+    const out = `${pre.stdout ?? ""}${pre.stderr ?? ""}`.trim();
+    if (out) console.log(`\n${out}`);
+    if (pre.status === 1) console.error("Lock preflight FAILED — dead upstream pin(s) above; fix the lock manifest, then re-render.");
+  } catch {}
 
   // fire-once handoff: the project keeps the updater + manifest + changelog,
   // then the template payload self-deletes (this wizard with it).

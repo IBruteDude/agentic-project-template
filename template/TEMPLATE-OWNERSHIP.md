@@ -17,6 +17,7 @@ Template sources live under `template/` in this checkout (`template/docs/`, `tem
 - `docs/knowledge/inbox/INDEX.md` (structure; notes themselves are project-owned)
 - `docs/adr/README.md` + `docs/adr/0000-template.md` (seed + blank; numbered decisions are project-owned)
 - `scripts/token-audit.mts` (audit tool: unrendered tokens + wording)
+- `scripts/lock-preflight.mts` (lock preflight: every `skills-lock.json` pin resolves live upstream, fails loud on dead pins)
 - `scripts/sync-template.mts` (updater itself)
 - `.gitignore` (root; keeps `.scratch/` local-only)
 

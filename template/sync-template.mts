@@ -62,6 +62,7 @@ const TMPL_MAP: Record<string, string> = {
   "scripts/sandcastle-implement-prompt.md.tmpl": ".sandcastle/implement-prompt.md",
   "scripts/sandcastle-review-prompt.md.tmpl": ".sandcastle/review-prompt.md",
   "scripts/token-audit.mts.tmpl": "scripts/token-audit.mts",
+  "scripts/lock-preflight.mts.tmpl": "scripts/lock-preflight.mts",
   "scripts/build-reports-index.mts.tmpl": "scripts/build-reports-index.mts",
   "scripts/pages-reports.yml.tmpl": ".github/workflows/pages-reports.yml",
   "scripts/tsconfig.json.tmpl": "tsconfig.json",
