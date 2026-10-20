@@ -18,7 +18,7 @@ Before planning or reconciling a feature request — in a planning skill (`to-sp
 
 ### Engineering skills
 
-Skills live in `.agents/skills/`; the when-to-reach map is `docs/agents/skills.md`, and `ask-matt` routes any unclear situation. Standing flows: scoped idea → `grill-with-docs` → `to-spec` → `to-tickets` → `implement` (one ticket per session, `/clear` between) or `implement-spec` (whole spec at once, integration branch + parallel implementers); foggy multi-session work → `wayfinder` → `to-spec`, never straight to build; raw inbound → `triage`; end of a build session → `retro` (helper-file fixes only, human picks what to keep). PR bodies follow the `pr` skill's shape.
+Skills live in `.agents/skills/`; the when-to-reach map is `docs/agents/skills.md`, and `ask-matt` routes any unclear situation — the matt vendor only; `docs/agents/skills-map.md` (the rendered two-vendor map) is the bridge for the pstack pack it does not know. Standing flows: scoped idea → `grill-with-docs` → `to-spec` → `to-tickets` → `implement` (one ticket per session, `/clear` between) or `implement-spec` (whole spec at once, integration branch + parallel implementers); foggy multi-session work → `wayfinder` → `to-spec`, never straight to build; raw inbound → `triage`; end of a build session → `retro` (helper-file fixes only, human picks what to keep). PR bodies follow the `pr` skill's shape; `technical-writing` sets their prose.
 
 ### Git workflow
 

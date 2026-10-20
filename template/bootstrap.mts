@@ -21,6 +21,7 @@
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { createInterface } from "node:readline";
+import { spawnSync } from "node:child_process";
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
 const DOCS_TMPL = join(ROOT, "template", "docs");
@@ -117,6 +118,7 @@ function destFor(srcRel: string): string | null {
     "template/docs/git-workflow.md.tmpl": "docs/agents/git-workflow.md",
     "template/docs/issue-tracker.md.tmpl": "docs/agents/issue-tracker.md",
     "template/docs/personal-status.md.tmpl": "docs/agents/personal-status.md",
+    "template/docs/skills-map.md.tmpl": "docs/agents/skills-map.md",
     "template/docs/triage-labels.md.tmpl": "docs/agents/triage-labels.md",
     "template/docs/knowledge-index.md.tmpl": "docs/knowledge/inbox/INDEX.md",
     "template/docs/adr-readme.md.tmpl": "docs/adr/README.md",
@@ -136,6 +138,7 @@ function destFor(srcRel: string): string | null {
     "template/scripts/sandcastle-implement-prompt.md.tmpl": ".sandcastle/implement-prompt.md",
     "template/scripts/sandcastle-review-prompt.md.tmpl": ".sandcastle/review-prompt.md",
     "template/scripts/token-audit.mts.tmpl": "scripts/token-audit.mts",
+    "template/scripts/lock-preflight.mts.tmpl": "scripts/lock-preflight.mts",
     "template/scripts/build-reports-index.mts.tmpl": "scripts/build-reports-index.mts",
     "template/scripts/pages-reports.yml.tmpl": ".github/workflows/pages-reports.yml",
     "template/scripts/tsconfig.json.tmpl": "tsconfig.json",
@@ -273,6 +276,24 @@ async function main() {
     console.error("Audit FAILED — fix templates/inputs, then re-run before deleting anything.");
     process.exit(1);
   }
+
+  // Lock preflight (loud): the real check is the rendered scripts/lock-preflight.mts
+  // (standalone: `npx tsx scripts/lock-preflight.mts`, exit 1 = dead upstream pin).
+  // The check names each dead pin (`name @ source: skillPath + status`); a
+  // resolved dead pin fails THIS run too (exit 1) — a future upstream deletion
+  // fails loud here, before it becomes a rendered project, instead of only
+  // breaking `skills experimental_install` later. Mechanics failures (npx/tsx
+  // missing, offline -> INCONCLUSIVE exit 0) skip silently: inconclusive is not
+  // a dead-pin verdict, never a false loud failure.
+  try {
+    const pre = spawnSync("npx", ["tsx", "scripts/lock-preflight.mts"], { cwd: ROOT, encoding: "utf8" });
+    const out = `${pre.stdout ?? ""}${pre.stderr ?? ""}`.trim();
+    if (out) console.log(`\n${out}`);
+    if (pre.status === 1) {
+      console.error("Lock preflight FAILED — dead upstream pin(s) above; fix the lock manifest, then re-render.");
+      process.exit(1);
+    }
+  } catch {}
 
   // fire-once handoff: the project keeps the updater + manifest + changelog,
   // then the template payload self-deletes (this wizard with it).

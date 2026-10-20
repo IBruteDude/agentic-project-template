@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "implement-spec": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/implement-spec/SKILL.md",
+      "computedHash": "fixture0000000000000000000000000000000000000000000000000000000000"
+    },
+    "how": {
+      "source": "backnotprop/pstack",
+      "sourceType": "github",
+      "skillPath": "skills/how/SKILL.md",
+      "computedHash": "fixture0000000000000000000000000000000000000000000000000000000000"
+    }
+  }
+}

@@ -16,6 +16,10 @@ Single-context layout (root `CONTEXT.md` + `docs/adr/`). See `docs/agents/domain
 
 Before planning or reconciling a feature request — in a planning skill (`to-spec`, `to-tickets`, `wayfinder`, `brief`, any grilling skill) or ad-hoc ("should we build X?") — read `docs/VISION.md` first; if the file doesn't exist, skip this rule silently. When it does exist, cite in the reply the sections the feature serves (e.g. `Serves §4 Core loop → Monitoring`) and confirm it is not excluded by `§8 Non-goals and exclusions` or `§10 Egypt-first edge`. If no section fits, write `OUT OF VISION` and ask before continuing. Fires when planning actually starts, not on routine claims of already-planned tickets.
 
+### Engineering skills
+
+Skills live in `.agents/skills/`; the when-to-reach map for both vendors is `docs/agents/skills-map.md`. `ask-matt` routes only the matt vendor — the map is the bridge for the pstack pack it does not know. PR bodies follow the `pr` skill's shape; `technical-writing` sets their prose.
+
 ### Git workflow
 
 Work in one lane: primary (`main`), scoped (`NN-<slug>` per issue), or personal (`personal/<user>/<topic>`, local-only). Show diff + message and wait for Yes before every commit; commit approval on a pre-authorized scoped branch carries push approval; `personal/*` is never pushed. See `docs/agents/git-workflow.md`.

@@ -19,3 +19,13 @@ _Avoid_: template, repo, downstream repo
 **rails**:
 The conventions the template installs: lanes, Yes-gate commits, brief/wrap driver, knowledge intake with promotion, skills wiring, sandboxed runner, closed triage labels.
 _Avoid_: template, tooling, workflow
+
+**pstack**:
+Upstream skills source `backnotprop/pstack` on skills.sh (~23 rigor-and-discipline skills from the Cursor ecosystem); cherry-picked adoption pack pinned in the lock per docs/adr/0003.
+_Avoid_: poteto stack, pstack ones
+
+**team skills**:
+Template-owned skills authored here (`brief`, `wrap`, `publish-report`) and rendered into downstream `.agents/skills/` by bootstrap/adopt, never installed from a lock.
+_Avoid_: upstream skills, vendored
+
+**upstream set**:

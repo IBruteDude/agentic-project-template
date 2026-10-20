@@ -1,0 +1,75 @@
+#!/usr/bin/env tsx
+/**
+ * scripts/lock-preflight.mts — lock preflight: every pinned upstream skill in
+ * the rendered skills-lock.json must resolve live (HTTP 200) on its upstream
+ * main tip. A deleted upstream skill surfaces here (name + skillPath + status)
+ * instead of inside `npx skills experimental_install`.
+ *
+ * Hash freshness is the CLI's job (`npx skills update`); this checks existence.
+ * URLs: lock entries are `sourceType: "github"` with `source: owner/repo`,
+ * resolved to `https://raw.githubusercontent.com/<source>/main/<skillPath>`
+ * via HEAD (both vendors pin their default branch `main`; the lock format has
+ * no ref field, so tip is the ground truth).
+ *
+ * Usage: npx tsx scripts/lock-preflight.mts [path/to/skills-lock.json]
+ *   (default: skills-lock.json at the project root)
+ *
+ * Exit 0 on pass (all pins resolve live), 1 on fail with one
+ * name @ source: skillPath HTTP <status> line per dead pin, and an
+ * inconclusive warning (exit 0, never a false dead pin) if the upstream
+ * cannot be reached at all.
+ */
+import { readFileSync, existsSync } from "node:fs";
+import { join, resolve, dirname } from "node:path";
+
+const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
+type LockSkill = { source: string; sourceType: string; skillPath: string; computedHash?: string };
+
+const LOCK = resolve(String(process.argv[2] ?? join(ROOT, "skills-lock.json")));
+const relLock = LOCK.startsWith(ROOT + "/") ? LOCK.slice(ROOT.length + 1) : LOCK;
+const fails: string[] = [];
+const unchecked: string[] = [];
+
+if (!existsSync(LOCK)) {
+  console.error(`lock-preflight FAILED (1):\n  ${relLock}: lock file not found`);
+  process.exit(1);
+}
+let lock: { skills?: Record<string, LockSkill> };
+try { lock = JSON.parse(readFileSync(LOCK, "utf8")); }
+catch (e) { console.error(`lock-preflight FAILED (1):\n  ${relLock}: unreadable JSON (${e instanceof Error ? e.message : String(e)})`); process.exit(1); }
+const skills = lock.skills as Record<string, LockSkill>;
+const names = Object.keys(skills);
+if (!names.length) {
+  console.error(`lock-preflight FAILED (1):\n  ${relLock}: no skills pinned`);
+  process.exit(1);
+}
+
+let okCount = 0;
+await Promise.all(names.map(async (name) => {
+  const s = skills[name];
+  if (s.sourceType !== "github") {
+    unchecked.push(`${name} @ ${s.source}: unsupported sourceType '${s.sourceType}' (expected github)`);
+    return;
+  }
+  const url = `https://raw.githubusercontent.com/${s.source}/main/${s.skillPath}`;
+  try {
+    const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(10_000) });
+    if (res.ok) okCount++;
+    else fails.push(`${name} @ ${s.source}: ${s.skillPath} HTTP ${res.status}`);
+  } catch (e) {
+    unchecked.push(`${name} @ ${s.source}: ${s.skillPath} (${e instanceof Error ? e.message : String(e)})`);
+  }
+}));
+
+if (fails.length) {
+  console.error(`lock-preflight FAILED (${fails.length}) — dead pins in ${relLock}:`);
+  for (const f of fails) console.error("  " + f);
+  process.exit(1);
+}
+if (unchecked.length) {
+  console.error(`lock-preflight INCONCLUSIVE (${relLock}): ${okCount}/${names.length} pins resolve, ${unchecked.length} could not be checked:`);
+  for (const u of unchecked) console.error("  " + u);
+  console.error("Upstream unreachable — rerun later; this is not a dead-pin verdict.");
+  process.exit(0);
+}
+console.log(`lock-preflight PASS: ${okCount}/${names.length} pins resolve live (${relLock}).`);

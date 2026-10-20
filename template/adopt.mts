@@ -56,7 +56,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname, resolve, basename } from "node:path";
 import { createInterface } from "node:readline";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 
 const ADOPT_FILE = new URL(import.meta.url).pathname;
 const ADOPT_DIR = dirname(ADOPT_FILE);
@@ -78,6 +78,7 @@ const ADOPT_MAP: Record<string, string> = {
   "docs/git-workflow.md.tmpl": "docs/agents/git-workflow.md",
   "docs/issue-tracker.md.tmpl": "docs/agents/issue-tracker.md",
   "docs/personal-status.md.tmpl": "docs/agents/personal-status.md",
+  "docs/skills-map.md.tmpl": "docs/agents/skills-map.md",
   "docs/triage-labels.md.tmpl": "docs/agents/triage-labels.md",
   "docs/knowledge-index.md.tmpl": "docs/knowledge/inbox/INDEX.md",
   "docs/adr-readme.md.tmpl": "docs/adr/README.md",
@@ -93,6 +94,7 @@ const ADOPT_MAP: Record<string, string> = {
   "scripts/sandcastle-implement-prompt.md.tmpl": ".sandcastle/implement-prompt.md",
   "scripts/sandcastle-review-prompt.md.tmpl": ".sandcastle/review-prompt.md",
   "scripts/token-audit.mts.tmpl": "scripts/token-audit.mts",
+  "scripts/lock-preflight.mts.tmpl": "scripts/lock-preflight.mts",
   "scripts/build-reports-index.mts.tmpl": "scripts/build-reports-index.mts",
   "scripts/pages-reports.yml.tmpl": ".github/workflows/pages-reports.yml",
   "scripts/tsconfig.json.tmpl": "tsconfig.json",
@@ -655,6 +657,27 @@ async function main() {
     console.error("Audit FAILED — adopted tree has unrendered tokens or wording hits. Fix inputs or templates, then re-run (safe no-op for identical files).");
     process.exit(1);
   }
+
+  // Lock preflight (loud): the real check is the rendered scripts/lock-preflight.mts
+  // in the downstream tree (standalone: `npx tsx scripts/lock-preflight.mts`,
+  // exit 1 = dead upstream pin). The check names each dead pin (`name @ source:
+  // skillPath + status`); a resolved dead pin fails THIS run too (exit 1) — a
+  // future upstream deletion fails loud, beyond a warning, instead of only
+  // breaking `skills experimental_install` later. Mechanics failures (npx/tsx
+  // missing, offline -> INCONCLUSIVE exit 0) skip silently: inconclusive is not
+  // a dead-pin verdict, never a false loud failure.
+  try {
+    if (existsSync(join(downstreamRoot, "scripts", "lock-preflight.mts"))) {
+      const pre = spawnSync("npx", ["tsx", "scripts/lock-preflight.mts"], { cwd: downstreamRoot, encoding: "utf8" });
+      const out = `${pre.stdout ?? ""}${pre.stderr ?? ""}`.trim();
+      if (out) console.log(`\n${out}`);
+      if (pre.status === 1) {
+        console.error("Lock preflight FAILED — dead upstream pin(s) above; remove or re-pin the dead entries, then re-adopt.");
+        process.exit(1);
+      }
+    }
+  } catch {}
+
   console.log(`Adopt complete. Human record: ${PERSONALIZATION_LOG}; machine record: ${SYNC_RECORD} (updater reads it when --input is omitted).`);
   console.log("Next: cp .sandcastle/.env.example .sandcastle/.env, fill GH_TOKEN + model credential, run scripts/token-audit.mts, pull later releases with scripts/sync-template.mts.");
 }
