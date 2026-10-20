@@ -47,6 +47,7 @@ const TMPL_MAP: Record<string, string> = {
   "docs/git-workflow.md.tmpl": "docs/agents/git-workflow.md",
   "docs/issue-tracker.md.tmpl": "docs/agents/issue-tracker.md",
   "docs/personal-status.md.tmpl": "docs/agents/personal-status.md",
+  "docs/skills-map.md.tmpl": "docs/agents/skills-map.md",
   "docs/triage-labels.md.tmpl": "docs/agents/triage-labels.md",
   "docs/knowledge-index.md.tmpl": "docs/knowledge/inbox/INDEX.md",
   "docs/adr-readme.md.tmpl": "docs/adr/README.md",
