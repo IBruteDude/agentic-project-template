@@ -22,7 +22,7 @@ Work in one lane: primary (`main`), scoped (`NN-<slug>` per issue), or personal 
 
 ### Example prompts for next steps
 
-Whenever you name a next step that an agent would do in a **different** session, end with a fenced code block the human can paste into a fresh one. The block must stand alone: the instruction, the read-first list (`AGENTS.md`, `docs/VISION.md` when the step is planning and the repo has one, plus issue number and target branch when they exist), and what done looks like. A sequence of steps goes in one block; independent steps get one block each. Drop the read-first list only when it would be noise. Exempt: work you are about to do yourself in this same session, and handoff documents (written for an agent, not pasted by a human).
+Hand a next step back to the human as a pasteable block **only when it needs them in the loop**: a decision, an interview, or shaping a separate sub-issue across several turns. If an agent can execute it autonomously — implement a ticket, review a diff, gather research — do not hand it back: do it in this session, or delegate it to a subagent (background where the work allows). When you do emit a block, it must stand alone: the instruction, the read-first list (`AGENTS.md`, `docs/VISION.md` when the step is planning and the repo has one, plus issue number and target branch when they exist), and what done looks like. A sequence of steps goes in one block; independent steps get one block each. Drop the read-first list only when it would be noise. Exempt: work you are about to do yourself in this same session, and handoff documents (written for an agent, not pasted by a human).
 
 ### Contributing
 
