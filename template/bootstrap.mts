@@ -118,6 +118,7 @@ function destFor(srcRel: string): string | null {
     "template/docs/git-workflow.md.tmpl": "docs/agents/git-workflow.md",
     "template/docs/issue-tracker.md.tmpl": "docs/agents/issue-tracker.md",
     "template/docs/personal-status.md.tmpl": "docs/agents/personal-status.md",
+    "template/docs/skills-map.md.tmpl": "docs/agents/skills-map.md",
     "template/docs/triage-labels.md.tmpl": "docs/agents/triage-labels.md",
     "template/docs/knowledge-index.md.tmpl": "docs/knowledge/inbox/INDEX.md",
     "template/docs/adr-readme.md.tmpl": "docs/adr/README.md",

@@ -10,4 +10,10 @@ This glossary is normative — use these terms verbatim. No domain terms are agr
 
 ## Language
 
-_No terms agreed yet — placeholder to unblock agent grounding. See #2 Sharpen domain glossary and `docs/knowledge/inbox/` inbox._
+**team skills**:
+Template-owned skills authored here (`brief`, `wrap`, `publish-report`) and rendered into downstream `.agents/skills/` by bootstrap/adopt, never installed from a lock.
+_Avoid_: upstream skills, vendored
+
+**upstream set**:
+The pinned third-party skills a project installs via `skills-lock.json` — currently `mattpocock/skills` and `backnotprop/pstack` — restored by `npx skills experimental_install` on first-day setup and committed to `.agents/skills/`.
+_Avoid_: vendored skills, external skills

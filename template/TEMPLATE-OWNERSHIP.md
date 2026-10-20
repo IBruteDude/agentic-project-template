@@ -7,7 +7,7 @@ Template sources live under `template/` in this checkout (`template/docs/`, `tem
 ## Template-owned (updater may propose changes, Yes-gated per file)
 
 - `CONTRIBUTING.md` (structure; domain examples render from tokens at bootstrap)
-- `docs/agents/` (`domain.md`, `git-workflow.md`, `issue-tracker.md`, `personal-status.md`, `triage-labels.md`)
+- `docs/agents/` (`domain.md`, `git-workflow.md`, `issue-tracker.md`, `personal-status.md`, `skills-map.md`, `triage-labels.md`)
 - `.sandcastle/` runner (`Dockerfile`, `main.mts`, `plan-prompt.md`, `implement-prompt.md`, `review-prompt.md`, `.env.example`, `.gitignore`)
 - `package.json` (runner deps; stack declaration renders from STACK_DESC token with VERIFY-TODOs where unknown)
 - `skills-lock.json` (pinned upstream-skill manifest; restored via `npx skills@latest experimental_install`, bumps via `npx skills update`) + `.agents/skills/` (upstream set, committed; plus template-owned `brief` + `wrap` + `publish-report` team skills; excluded from wording audit)
