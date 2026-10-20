@@ -277,16 +277,22 @@ async function main() {
     process.exit(1);
   }
 
-  // Lock preflight (thin, best-effort): the real check is the rendered
-  // scripts/lock-preflight.mts (standalone: `npx tsx scripts/lock-preflight.mts`,
-  // exit 1 = dead upstream pin). Surfaced here without failing the render so an
-  // offline run stays clean; a dead pin still fails `skills experimental_install`
-  // on its own (downstream impact, separate seam).
+  // Lock preflight (loud): the real check is the rendered scripts/lock-preflight.mts
+  // (standalone: `npx tsx scripts/lock-preflight.mts`, exit 1 = dead upstream pin).
+  // The check names each dead pin (`name @ source: skillPath + status`); a
+  // resolved dead pin fails THIS run too (exit 1) — a future upstream deletion
+  // fails loud here, before it becomes a rendered project, instead of only
+  // breaking `skills experimental_install` later. Mechanics failures (npx/tsx
+  // missing, offline -> INCONCLUSIVE exit 0) skip silently: inconclusive is not
+  // a dead-pin verdict, never a false loud failure.
   try {
     const pre = spawnSync("npx", ["tsx", "scripts/lock-preflight.mts"], { cwd: ROOT, encoding: "utf8" });
     const out = `${pre.stdout ?? ""}${pre.stderr ?? ""}`.trim();
     if (out) console.log(`\n${out}`);
-    if (pre.status === 1) console.error("Lock preflight FAILED — dead upstream pin(s) above; fix the lock manifest, then re-render.");
+    if (pre.status === 1) {
+      console.error("Lock preflight FAILED — dead upstream pin(s) above; fix the lock manifest, then re-render.");
+      process.exit(1);
+    }
   } catch {}
 
   // fire-once handoff: the project keeps the updater + manifest + changelog,

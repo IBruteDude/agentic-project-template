@@ -658,17 +658,23 @@ async function main() {
     process.exit(1);
   }
 
-  // Lock preflight (thin, best-effort): the real check is the rendered
-  // scripts/lock-preflight.mts in the downstream tree (standalone:
-  // `npx tsx scripts/lock-preflight.mts`, exit 1 = dead upstream pin). Surfaced
-  // here without failing the adopt run; a dead pin still fails
-  // `skills experimental_install` on its own (downstream impact, separate seam).
+  // Lock preflight (loud): the real check is the rendered scripts/lock-preflight.mts
+  // in the downstream tree (standalone: `npx tsx scripts/lock-preflight.mts`,
+  // exit 1 = dead upstream pin). The check names each dead pin (`name @ source:
+  // skillPath + status`); a resolved dead pin fails THIS run too (exit 1) — a
+  // future upstream deletion fails loud, beyond a warning, instead of only
+  // breaking `skills experimental_install` later. Mechanics failures (npx/tsx
+  // missing, offline -> INCONCLUSIVE exit 0) skip silently: inconclusive is not
+  // a dead-pin verdict, never a false loud failure.
   try {
     if (existsSync(join(downstreamRoot, "scripts", "lock-preflight.mts"))) {
       const pre = spawnSync("npx", ["tsx", "scripts/lock-preflight.mts"], { cwd: downstreamRoot, encoding: "utf8" });
       const out = `${pre.stdout ?? ""}${pre.stderr ?? ""}`.trim();
       if (out) console.log(`\n${out}`);
-      if (pre.status === 1) console.error("Lock preflight FAILED — dead upstream pin(s) above; remove or re-pin the dead entries, then re-adopt.");
+      if (pre.status === 1) {
+        console.error("Lock preflight FAILED — dead upstream pin(s) above; remove or re-pin the dead entries, then re-adopt.");
+        process.exit(1);
+      }
     }
   } catch {}
 

@@ -37,7 +37,8 @@ if (!existsSync(LOCK)) {
 let lock: { skills?: Record<string, LockSkill> };
 try { lock = JSON.parse(readFileSync(LOCK, "utf8")); }
 catch (e) { console.error(`lock-preflight FAILED (1):\n  ${relLock}: unreadable JSON (${e instanceof Error ? e.message : String(e)})`); process.exit(1); }
-const names = Object.keys(lock.skills ?? {});
+const skills = lock.skills as Record<string, LockSkill>;
+const names = Object.keys(skills);
 if (!names.length) {
   console.error(`lock-preflight FAILED (1):\n  ${relLock}: no skills pinned`);
   process.exit(1);
@@ -45,7 +46,7 @@ if (!names.length) {
 
 let okCount = 0;
 await Promise.all(names.map(async (name) => {
-  const s = (lock.skills as Record<string, LockSkill>)[name];
+  const s = skills[name];
   if (s.sourceType !== "github") {
     unchecked.push(`${name} @ ${s.source}: unsupported sourceType '${s.sourceType}' (expected github)`);
     return;
