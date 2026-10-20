@@ -1,0 +1,5 @@
+interface:
+  display_name: "Publish report"
+  short_description: "Publish or unpublish static HTML reports on Pages"
+policy:
+  allow_implicit_invocation: true
