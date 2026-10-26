@@ -22,11 +22,21 @@ Skills live in `.agents/skills/`; the when-to-reach map is `docs/agents/skills.m
 
 ### Git workflow
 
-Work in one lane: primary (`main`), scoped (`NN-<slug>` per issue), or personal (`personal/<user>/<topic>`, local-only). Show diff + message and wait for Yes before every commit; commit approval on a pre-authorized scoped branch carries push approval; `personal/*` is never pushed. See `docs/agents/git-workflow.md`.
+Work in one lane: primary (`main`), scoped (`NN-<slug>` per issue), or personal (`personal/<user>/<topic>`, local-only). Make changes reviewable, show the proposed message, and obtain explicit human approval before each commit. Commit approval on a pre-authorized scoped branch carries push approval; `personal/*` is never pushed. See `docs/agents/git-workflow.md`.
 
-### Example prompts for next steps
+### Separate-session handoffs
 
-Hand a next step back to the human as a pasteable block **only when it needs them in the loop**: a decision, an interview, or shaping a separate sub-issue across several turns. If an agent can execute it autonomously — implement a ticket, review a diff, gather research — do not hand it back: do it in this session, or delegate it to a subagent (background where the work allows). When you do emit a block, it must stand alone: the instruction, the read-first list (`AGENTS.md`, `docs/VISION.md` when the step is planning and the repo has one, plus issue number and target branch when they exist), and what done looks like. A sequence of steps goes in one block; independent steps get one block each. Drop the read-first list only when it would be noise. Exempt: work you are about to do yourself in this same session, and handoff documents (written for an agent, not pasted by a human).
+Suggest a separate session when a work unit can progress independently or the current context is getting crowded. Use context size as one signal, with no fixed token cutoff. Leave starting the session to the human. Use subagents for bounded work the current agent can complete itself.
+
+When suggesting a session, choose the format that best helps the next agent complete the intended outcome. Keep it concise while preserving the goal and key details. Carry forward only relevant context and pointers to useful artifacts. Invoke relevant skills when they help. Use existing handoff or grounding files when useful, and create them only when they add context the prompt cannot carry concisely. Check available context before making assumptions. State what remains uncertain. Ask the human only when uncertainty materially changes the goal or blocks progress.
+
+### Decisions and approvals
+
+Carry settled decisions forward and continue authorized work until the next unresolved decision or required approval.
+
+When requesting a decision or approval, put the current proposal and what the answer authorizes in the request itself, visible when the human answers. Use the human's existing review workflow and give a concise overview. Show small diffs inline. For larger changes, guide the human through the available diff viewer; otherwise choose a presentation suited to the changes and the human's tools.
+
+Interpret replies in context: agreement with content settles that content; authorization to perform an action applies to the proposal presented for that action. After requested revisions, present the updated proposal before seeking approval of the affected action.
 
 ### Contributing
 
