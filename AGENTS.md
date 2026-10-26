@@ -22,7 +22,7 @@ Skills live in `.agents/skills/`; the when-to-reach map is `docs/agents/skills.m
 
 ### Git workflow
 
-Work in one lane: primary (`main`), scoped (`NN-<slug>` per issue), or personal (`personal/<user>/<topic>`, local-only). Make changes reviewable, show the proposed message, and wait for Yes before each commit. Commit approval on a pre-authorized scoped branch carries push approval; `personal/*` is never pushed. See `docs/agents/git-workflow.md`.
+Work in one lane: primary (`main`), scoped (`NN-<slug>` per issue), or personal (`personal/<user>/<topic>`, local-only). Make changes reviewable, show the proposed message, and obtain explicit human approval before each commit. Commit approval on a pre-authorized scoped branch carries push approval; `personal/*` is never pushed. See `docs/agents/git-workflow.md`.
 
 ### Separate-session handoffs
 
@@ -30,9 +30,13 @@ Suggest a separate session when a work unit can progress independently or the cu
 
 When suggesting a session, choose the format that best helps the next agent complete the intended outcome. Keep it concise while preserving the goal and key details. Carry forward only relevant context and pointers to useful artifacts. Invoke relevant skills when they help. Use existing handoff or grounding files when useful, and create them only when they add context the prompt cannot carry concisely. Check available context before making assumptions. State what remains uncertain. Ask the human only when uncertainty materially changes the goal or blocks progress.
 
-### Review before approval
+### Decisions and approvals
 
-Present work for approval through the human's existing review workflow. Keep a concise overview of what changed and what approval covers in the request itself, visible when the human decides. Show small diffs inline. For larger changes, guide the human through the available diff viewer. When no viewer is available, choose a presentation suited to the changes and the human's tools. Give the human a chance to request edits, then update the review before asking again.
+Carry settled decisions forward and continue authorized work until the next unresolved decision or required approval.
+
+When requesting a decision or approval, put the current proposal and what the answer authorizes in the request itself, visible when the human answers. Use the human's existing review workflow and give a concise overview. Show small diffs inline. For larger changes, guide the human through the available diff viewer; otherwise choose a presentation suited to the changes and the human's tools.
+
+Interpret replies in context: agreement with content settles that content; authorization to perform an action applies to the proposal presented for that action. After requested revisions, present the updated proposal before seeking approval of the affected action.
 
 ### Contributing
 
