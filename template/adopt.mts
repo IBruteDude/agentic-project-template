@@ -57,6 +57,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync, rea
 import { join, dirname, resolve, basename } from "node:path";
 import { createInterface } from "node:readline";
 import { execSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 
 const ADOPT_FILE = new URL(import.meta.url).pathname;
 const ADOPT_DIR = dirname(ADOPT_FILE);
@@ -626,6 +627,49 @@ async function main() {
         }
       }
     }
+  }
+
+  // 5b. Applied-revision sync receipt (.template-receipt.json)
+  {
+    const receiptFiles: Record<string, { type: "template-owned" | "meta-copy" | "seed-only"; baselineHash: string; status: "applied" | "notified" }> = {};
+    for (const [srcRel, destRel] of Object.entries(ADOPT_MAP)) {
+      const dest = join(downstreamRoot, destRel);
+      if (existsSync(dest)) {
+        receiptFiles[destRel] = {
+          type: "template-owned",
+          baselineHash: createHash("sha256").update(readFileSync(dest)).digest("hex"),
+          status: "applied",
+        };
+      }
+    }
+    for (const [srcRel, destRel] of Object.entries(META_COPY)) {
+      const dest = join(downstreamRoot, destRel);
+      if (existsSync(dest)) {
+        receiptFiles[destRel] = {
+          type: "meta-copy",
+          baselineHash: createHash("sha256").update(readFileSync(dest)).digest("hex"),
+          status: "applied",
+        };
+      }
+    }
+    const agentsDest = join(downstreamRoot, "AGENTS.md");
+    if (existsSync(agentsDest)) {
+      receiptFiles["AGENTS.md"] = {
+        type: "seed-only",
+        baselineHash: createHash("sha256").update(readFileSync(agentsDest)).digest("hex"),
+        status: "notified",
+      };
+    }
+    const receipt = {
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      schemaVersion: 1,
+      sourceCommit: "adopt-initial",
+      templateVersion: version,
+      appliedAt: new Date().toISOString(),
+      status: outcomes.conflict.length ? "partial" : "complete",
+      files: receiptFiles,
+    };
+    writeFileSync(join(downstreamRoot, ".template-receipt.json"), JSON.stringify(receipt, null, 2) + "\n");
   }
 
   // 6. Human personalization log (consistent with bootstrap; append-only).

@@ -31,6 +31,9 @@ jobs:
       - name: Run skills-map spec
         run: npx tsx template/scripts/skills-map.test.mts
 
+      - name: Run sync-template spec
+        run: npx tsx template/scripts/sync-template.test.mts
+
   smoke-test:
     name: Distributable Fixture Smoke Test
     runs-on: ubuntu-latest
