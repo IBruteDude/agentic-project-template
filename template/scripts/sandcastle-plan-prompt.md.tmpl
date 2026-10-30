@@ -18,6 +18,13 @@ For each unblocked issue, assign a branch name using the exact format `NN-<kebab
 
 If the issue is a map/PRD that has implementation children, do not plan it directly.
 
+## Decomposition criteria
+
+When evaluating or decomposing implementation tickets, each ticket must represent an independent, tracer-bullet delivery unit:
+- Distinct owner, distinct external dependency, or distinct demoable/verifiable deliverable.
+- Do not decompose tickets purely to mirror document headings or section titles.
+- Tickets must specify genuine blocking dependencies rather than artificial linear sequencing.
+
 # OUTPUT
 
 Output your plan as JSON wrapped in `<plan>` tags:
