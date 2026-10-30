@@ -25,6 +25,8 @@ for (const entry of readdirSync(ROOT)) {
   if (["node_modules", ".git", ".scratch"].includes(entry)) continue;
   cpSync(join(ROOT, entry), join(SANDBOX, entry), { recursive: true });
 }
+// Copy node_modules so npx/tsx inside bootstrap uses local binary without network delay
+cpSync(join(ROOT, "node_modules"), join(SANDBOX, "node_modules"), { recursive: true });
 
 // 1. Run bootstrap.mts into SANDBOX
 console.log("Running bootstrap.mts in sandbox...");
@@ -47,8 +49,7 @@ if (existsSync(join(SANDBOX, "template"))) {
 }
 console.log("  ok: template/ payload self-deleted");
 
-// 2. Link node_modules for typecheck in downstream fixture
-cpSync(join(ROOT, "node_modules"), join(SANDBOX, "node_modules"), { recursive: true });
+// 2. Run typecheck inside rendered fixture
 
 console.log("Running typecheck inside rendered fixture...");
 const tc = spawnSync(TSC, ["--noEmit"], { cwd: SANDBOX, encoding: "utf8", timeout: 60_000 });
