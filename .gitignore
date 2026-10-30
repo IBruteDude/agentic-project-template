@@ -1,6 +1,5 @@
 # template repo itself (not rendered projects)
 node_modules/
-package-lock.json
 .scratch/
 .env
 # skills tool writes per-agent copies outside .agents/ (tool 1.7.1) — untracked by design

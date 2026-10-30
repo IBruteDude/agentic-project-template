@@ -55,7 +55,11 @@ await Promise.all(names.map(async (name) => {
   try {
     const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(10_000) });
     if (res.ok) okCount++;
-    else fails.push(`${name} @ ${s.source}: ${s.skillPath} HTTP ${res.status}`);
+    else if (res.status >= 500) {
+      unchecked.push(`${name} @ ${s.source}: ${s.skillPath} HTTP ${res.status} (transient server error)`);
+    } else {
+      fails.push(`${name} @ ${s.source}: ${s.skillPath} HTTP ${res.status}`);
+    }
   } catch (e) {
     unchecked.push(`${name} @ ${s.source}: ${s.skillPath} (${e instanceof Error ? e.message : String(e)})`);
   }
