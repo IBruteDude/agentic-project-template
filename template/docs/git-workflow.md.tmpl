@@ -62,3 +62,19 @@ Commits on `personal/*` are local-only drafts (never pushed, never PR'd): they m
 - A finding graduates from personal to shared when it changes a shared decision, glossary term, or unblocks a ticket (decision-impact trigger). Then propose the promotion and wait: a clean `NN-<slug>` branch, a focused commit following the rule above, and the PR or issue comment that carries the finding. Copy the finding out; leave the personal original local.
 
 - Rail fix 0.3.0: squash message must use explicit `-t`/`-b` (never the pre-filled default).
+
+## Checkout isolation: worktrees for independent tasks
+
+When multiple agents or parallel tasks operate concurrently:
+- Never share a single working tree for independent tasks or concurrent write streams. A dirty working tree causes uncommitted file collisions, accidental inclusion of unrelated changes, and race conditions.
+- Obtain an isolated Git worktree for each independent task:
+  `git worktree add -b NN-<slug> .worktrees/NN-<slug> main`
+- Release the worktree upon completion: `git worktree remove .worktrees/NN-<slug>`.
+
+## Shared issue map concurrency
+
+When updating shared tracker map issues:
+- Re-read the remote issue body (`gh issue view <n> --json body`) immediately before preparing and submitting edits.
+- Compare the fetched body against the base version used to prepare the edit. If the remote body changed concurrently, stop, rebase the intended changes onto the new body, and recompose the edit.
+- Client-side refresh narrows the race window but cannot provide a distributed lock; serialize heavily contested updates where practical.
+
