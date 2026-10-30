@@ -22,6 +22,7 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync
 import { join, dirname, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
 const DOCS_TMPL = join(ROOT, "template", "docs");
@@ -267,6 +268,30 @@ async function main() {
   // it when --input is omitted, so later releases pull without re-asking.
   const record = { template: ROOT, version: templateVersion(), inputs: inp };
   writeFileSync(join(ROOT, ".template-sync.json"), JSON.stringify(record, null, 2) + "\n");
+
+  // applied-revision receipt: per-file baseline hashes for 3-way conflict protection
+  const receiptFiles: Record<string, { type: "template-owned" | "meta-copy" | "seed-only"; baselineHash: string; status: "applied" | "notified" }> = {};
+  for (const r of rendered) {
+    const p = join(ROOT, r);
+    if (existsSync(p)) {
+      const type = r === "AGENTS.md" ? "seed-only" : "template-owned";
+      receiptFiles[r] = {
+        type,
+        baselineHash: createHash("sha256").update(readFileSync(p)).digest("hex"),
+        status: r === "AGENTS.md" ? "notified" : "applied",
+      };
+    }
+  }
+  const receipt = {
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    schemaVersion: 1,
+    sourceCommit: "bootstrap-initial",
+    templateVersion: templateVersion(),
+    appliedAt: new Date().toISOString(),
+    status: "complete",
+    files: receiptFiles,
+  };
+  writeFileSync(join(ROOT, ".template-receipt.json"), JSON.stringify(receipt, null, 2) + "\n");
 
   // audit before self-delete
   const { tokens, schooling } = audit(ROOT);
